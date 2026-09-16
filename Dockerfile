@@ -1,6 +1,6 @@
 # Clep platform backend — hosted deploy.
 # Playwright base image ships Chromium + deps; we add ffmpeg + Pillow only.
-FROM mcr.microsoft.com/playwright/python:v1.49-jammy
+FROM mcr.microsoft.com/playwright/python:v1.63.0-jammy
 
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
     && rm -rf /var/lib/apt/lists/*
