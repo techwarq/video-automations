@@ -1,0 +1,12 @@
+{
+  "name": "clep",
+  "displayName": "Clep",
+  "description": "Video layer for software products — instrument data-clep features with Claude, render 1080p60 product clips from the hosted platform.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Clep"
+  },
+  "homepage": "https://clep.vercel.app",
+  "license": "MIT",
+  "keywords": ["product-video", "demo", "screen-recording", "data-clep", "launch"]
+}

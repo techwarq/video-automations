@@ -1,0 +1,19 @@
+{
+  "name": "clep-marketplace",
+  "owner": {
+    "name": "Clep"
+  },
+  "description": "Clep — the video layer for software products. One plugin: instrument with Claude, render clips from the platform.",
+  "plugins": [
+    {
+      "name": "clep",
+      "source": "./plugins/clep",
+      "description": "Instrument data-clep features and render 1080p60 product clips from the hosted platform.",
+      "version": "0.2.0",
+      "author": {
+        "name": "Clep"
+      },
+      "keywords": ["product-video", "demo", "data-clep"]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+pipeline/
+pipeline_motion/
+venv/
+.venv/
+__pycache__/
+*.pyc
+.git/
+.next/
+node_modules/
+pipeline_clep/output/
+pipeline_clep/cache/
+platform/jobs.json
+platform/registry.json
+.env

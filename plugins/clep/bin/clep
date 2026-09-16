@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+"""clep — bundled plugin CLI (stdlib only, no deps).
+
+Talks to the hosted Clep backend so Claude Code can scan features and
+render clips without any local pipeline install.
+
+Env:
+  CLEP_API_URL  base URL, default http://127.0.0.1:8787
+  CLEP_API_KEY  platform API key (dashboard -> API Keys). Required when the
+                backend sets CLEP_API_KEYS; sent as X-API-Key.
+
+Usage:
+  clep scan <url>
+  clep clip --url URL --name NAME [--query Q --style S --fps N
+            --quality {720p,1080p} --steps-file plan.json --wait [--out f.mp4]]
+  clep jobs
+  clep job <id> [--wait [--timeout SEC] [--out file.mp4]]
+  clep health
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import time
+import urllib.parse
+import urllib.request
+
+
+def _base() -> str:
+    return (os.environ.get("CLEP_API_URL") or "http://127.0.0.1:8787").rstrip("/")
+
+
+def _key() -> str:
+    return os.environ.get("CLEP_API_KEY", "").strip()
+
+
+def _req(method: str, path: str, body: dict | None = None) -> tuple[int, dict | bytes]:
+    url = _base() + path
+    data = json.dumps(body).encode() if body is not None else None
+    r = urllib.request.Request(url, data=data, method=method)
+    if data:
+        r.add_header("Content-Type", "application/json")
+    if _key():
+        r.add_header("X-API-Key", _key())
+    try:
+        with urllib.request.urlopen(r, timeout=60) as resp:
+            raw = resp.read()
+            ctype = resp.headers.get("Content-Type", "")
+            if "application/json" in ctype:
+                return resp.status, json.loads(raw or b"{}")
+            return resp.status, raw
+    except urllib.error.HTTPError as e:
+        try:
+            payload = json.loads(e.read() or b"{}")
+        except Exception:
+            payload = {"error": f"HTTP {e.code}"}
+        if e.code == 401:
+            payload = {"error": "unauthorized: set a valid CLEP_API_KEY (dashboard -> API Keys)."}
+        print(f"[clep] error: {payload.get('error', payload)}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_health(_a) -> None:
+    code, payload = _req("GET", "/api/health")
+    print(json.dumps(payload, indent=2))
+
+
+def cmd_scan(a) -> None:
+    code, payload = _req("GET", "/api/features?url=" + urllib.parse.quote(a.url, safe=""))
+    if isinstance(payload, dict) and payload.get("error"):
+        print(f"[clep] error: {payload['error']}", file=sys.stderr)
+        sys.exit(1)
+    feats = payload.get("features", []) if isinstance(payload, dict) else []
+    print(f"[clep] {len(feats)} feature(s) on {a.url}:")
+    for f in feats:
+        print(f"  - {f.get('name')} — input={f.get('has_input')} "
+              f"button={f.get('has_button')} label={f.get('button_label')!r} "
+              f"states={f.get('states')}")
+    if not feats:
+        print('[clep] tip: add data-clep="name" to the app, then re-run.')
+
+
+def _load_steps(path: str | None):
+    if not path:
+        return None
+    raw = json.loads(open(path).read())
+    return raw.get("steps", raw) if isinstance(raw, dict) else raw
+
+
+def _wait_job(job_id: str, timeout: float, out: str | None) -> dict:
+    deadline = time.monotonic() + timeout
+    job: dict = {}
+    while time.monotonic() < deadline:
+        _, job = _req("GET", f"/api/jobs/{job_id}")
+        status = job.get("status") if isinstance(job, dict) else None
+        print(f"[clep] {job_id}: {status}", file=sys.stderr)
+        if status in ("done", "error"):
+            break
+        time.sleep(3)
+    else:
+        print(f"[clep] timed out after {timeout:.0f}s — job still {job.get('status')}", file=sys.stderr)
+        sys.exit(2)
+    if job.get("status") == "error":
+        print(f"[clep] job failed: {job.get('error')}", file=sys.stderr)
+        sys.exit(1)
+    if out and job.get("out"):
+        _download(job["out"], out)
+        job["downloaded"] = out
+    return job
+
+
+def _download(out_path: str, dest: str) -> None:
+    src = out_path if out_path.startswith("http") else _base() + out_path
+    r = urllib.request.Request(src)
+    if _key():
+        r.add_header("X-API-Key", _key())
+    with urllib.request.urlopen(r, timeout=120) as resp, open(dest, "wb") as f:
+        f.write(resp.read())
+    print(f"[clep] saved {dest}")
+
+
+def cmd_clip(a) -> None:
+    body: dict = {"url": a.url, "name": a.name}
+    if a.query:
+        body["query"] = a.query
+    if a.style:
+        body["style"] = a.style
+    if a.fps:
+        body["fps"] = a.fps
+    if a.quality:
+        body["quality"] = a.quality
+    steps = _load_steps(a.steps_file)
+    if steps:
+        body["steps"] = steps
+    _, payload = _req("POST", "/api/clips", body)
+    jid = payload.get("job_id", "") if isinstance(payload, dict) else ""
+    print(f"[clep] job {jid} queued ({a.name} @ {a.url})")
+    if a.wait:
+        job = _wait_job(jid, a.timeout, a.out)
+        print(json.dumps(job, indent=2))
+    else:
+        print(f"[clep] poll: clep job {jid} --wait")
+
+
+def cmd_jobs(_a) -> None:
+    _, payload = _req("GET", "/api/jobs")
+    jobs = payload.get("jobs", []) if isinstance(payload, dict) else []
+    if not jobs:
+        print("[clep] no jobs yet — run: clep clip --url URL --name NAME --wait")
+        return
+    for j in jobs:
+        print(f"  {j.get('id')}  {j.get('status'):9s}  {j.get('name')}  {j.get('out') or j.get('error') or ''}")
+
+
+def cmd_job(a) -> None:
+    if a.wait:
+        job = _wait_job(a.id, a.timeout, a.out)
+        print(json.dumps(job, indent=2))
+    else:
+        _, payload = _req("GET", f"/api/jobs/{a.id}")
+        print(json.dumps(payload, indent=2))
+        if a.out and isinstance(payload, dict) and payload.get("out"):
+            _download(payload["out"], a.out)
+
+
+def build() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(prog="clep", description="Clep plugin CLI — features to MP4 via hosted backend.")
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    s = sub.add_parser("scan", help="List data-clep features on a live URL.")
+    s.add_argument("url")
+    s.set_defaults(fn=cmd_scan)
+
+    c = sub.add_parser("clip", help="Render a clip job.")
+    c.add_argument("--url", required=True)
+    c.add_argument("--name", required=True, help="data-clep name")
+    c.add_argument("--query", default=None)
+    c.add_argument("--style", default=None, choices=["minimal", "saas", "cinematic", "apple"])
+    c.add_argument("--fps", default=None, type=int, choices=[30, 60])
+    c.add_argument("--quality", default=None, choices=["720p", "1080p"])
+    c.add_argument("--steps-file", default=None)
+    c.add_argument("--wait", action="store_true")
+    c.add_argument("--timeout", type=float, default=300)
+    c.add_argument("--out", default=None, help="Download MP4 here when done (implies --wait done path).")
+    c.set_defaults(fn=cmd_clip)
+
+    j = sub.add_parser("jobs", help="List clip jobs (newest first).")
+    j.set_defaults(fn=cmd_jobs)
+
+    g = sub.add_parser("job", help="Show / wait / download one job.")
+    g.add_argument("id")
+    g.add_argument("--wait", action="store_true")
+    g.add_argument("--timeout", type=float, default=300)
+    g.add_argument("--out", default=None)
+    g.set_defaults(fn=cmd_job)
+
+    h = sub.add_parser("health", help="Backend liveness check (no auth).")
+    h.set_defaults(fn=cmd_health)
+    return p
+
+
+def main() -> None:
+    a = build().parse_args()
+    a.fn(a)
+
+
+if __name__ == "__main__":
+    main()

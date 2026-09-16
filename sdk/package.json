@@ -1,0 +1,39 @@
+{
+  "name": "@clep/sdk",
+  "version": "0.1.0",
+  "description": "Video layer for software products — data-clep instrumentation (no recording required)",
+  "main": "./clep.js",
+  "exports": {
+    ".": "./clep.js",
+    "./auto": "./auto.js",
+    "./react": "./react.js"
+  },
+  "typesVersions": {
+    "*": {
+      "react": ["./react.d.ts"]
+    }
+  },
+  "files": [
+    "clep.js",
+    "auto.js",
+    "react.js",
+    "react.d.ts",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "react": ">=16"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "license": "MIT",
+  "keywords": [
+    "product-video",
+    "screen-recording",
+    "demo",
+    "instrumentation",
+    "data-clep"
+  ]
+}

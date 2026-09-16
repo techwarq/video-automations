@@ -1,0 +1,11 @@
+{
+  "steps": [
+    { "action": "click", "target": "text:Invoices" },
+    { "action": "wait", "for": "change", "timeout": 8 },
+    { "action": "upload", "target": "file", "file": "pipeline_clep/demo/sample-bank-statement.pdf" },
+    { "action": "wait", "for": "state:scanning", "timeout": 6 },
+    { "action": "wait", "for": "state:done", "timeout": 8 },
+    { "action": "click", "target": "text:CSV" },
+    { "action": "wait", "for": "time:1.4" }
+  ]
+}

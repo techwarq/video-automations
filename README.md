@@ -1,10 +1,12 @@
 # Allore video pipelines — unified CLI
 
-One entry point, `allore.py`, over the two engines that already live here:
+One entry point, `allore.py`, over the engines that already live here:
 
 ```
 pipeline/          talking-head explainer (9:16, top card + bottom talking-head video)
 pipeline_motion/   pure motion graphics / kinetic typography (16:9 or 9:16, fullscreen)
+pipeline_clep/     feature clips — data-clep feature.json -> 2-5s product clip (NEW)
+sdk/               browser SDK — data-clep instrumentation (vanilla JS + React)
 ```
 
 `allore.py` doesn't duplicate their code — it picks whichever engine's `main.py`
@@ -49,5 +51,33 @@ python allore.py --mode motion --prompt "Search and fetch, 100% free. No subscri
 ```
 
 Run `python allore.py --help` for the full flag list — flags marked
-`[talking-head]` or `[motion]` in the help text only apply to that mode and
-are ignored (with a warning) in the other.
+`[talking-head]`, `[motion]`, or `[clep]` in the help text only apply to that
+mode and are ignored (with a warning) in the others.
+
+## Feature clips (NEW — video layer for software products)
+
+```bash
+# instrument once: <button data-clep="ai-research"> (see sdk/README.md)
+# agent: list features, then record the live feature + edit the recording
+python allore.py --mode clep --url https://acme.ai/dashboard
+python allore.py --mode clep --url https://acme.ai/dashboard \
+    --name ai-research --out pipeline_clep/output/ai.mp4
+
+# synthetic fallback (no browser): render the UI mock from a feature.json
+python allore.py --mode clep --feature pipeline_clep/demo/ai-research.feature.json \
+    --out pipeline_clep/output/ai-research.mp4
+
+# multi-step plan (chained clicks across states)
+python allore.py --mode clep --url https://acme.ai/dashboard --name ai-research \
+    --steps-file pipeline_clep/demo/multistep.example.json \
+    --out pipeline_clep/output/ai-multi.mp4
+```
+
+## Clep platform (dashboard — see features, Make Clip)
+
+```bash
+python platform/server.py --port 8787
+# open http://127.0.0.1:8787 — scan an app, pick a feature, Make Clip,
+# watch the job record + edit, preview + download the MP4.
+# SDK live reports: data-registry="http://localhost:8787/api/ingest"
+```

@@ -1,0 +1,25 @@
+{
+  "name": "ai-research",
+  "title": "AI Research",
+  "url": "https://acme.ai/dashboard",
+  "viewport": { "w": 1440, "h": 900 },
+  "element": { "x": 0.2, "y": 0.35, "w": 0.6, "h": 0.3 },
+  "interactions": [
+    { "type": "click", "target": "primary" },
+    { "type": "input", "target": "search" },
+    { "type": "submit" },
+    { "type": "loading" },
+    { "type": "result" }
+  ],
+  "states": ["empty", "generating", "completed"],
+  "steps": [
+    { "type": "focus", "label": "Search input" },
+    { "type": "type", "text": "AI browser agents" },
+    { "type": "click", "target": "Research" },
+    { "type": "loading", "label": "Research running" },
+    { "type": "result", "label": "Sources appear" }
+  ],
+  "style": "saas",
+  "duration": 4.2,
+  "aspect": "16:9"
+}

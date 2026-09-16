@@ -1,0 +1,17 @@
+{
+  "_note": "Real dashboard flow for the Clep app. Credentials are NOT stored here — pass email/password via the platform dashboard or env at runtime.",
+  "steps": [
+    { "action": "goto", "url": "http://127.0.0.1:3000/login" },
+    { "action": "type", "target": "input[placeholder=\"you@company.com\"]", "value": "USER_EMAIL" },
+    { "action": "type", "target": "input[type=password]", "value": "USER_PASSWORD" },
+    { "action": "click", "target": "text:Log in" },
+    { "action": "wait", "for": "url:/dashboard", "timeout": 15 },
+    { "action": "upload", "target": "file", "file": "pipeline_clep/demo/sample-bank-statement.pdf" },
+    { "action": "wait", "for": "change", "timeout": 8 },
+    { "action": "click", "target": "text:Convert Document" },
+    { "action": "click", "target": "text:History" },
+    { "action": "wait", "for": "appear:text=Download", "timeout": 240 },
+    { "action": "click", "target": "text:Download" },
+    { "action": "wait", "for": "time:2" }
+  ]
+}

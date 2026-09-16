@@ -1,0 +1,9 @@
+{
+  "steps": [
+    { "action": "type", "target": "input", "value": "AI browser agents" },
+    { "action": "click", "target": "primary" },
+    { "action": "wait", "for": "state:completed", "timeout": 6 },
+    { "action": "click", "target": "action:export" },
+    { "action": "wait", "for": "state:exported", "timeout": 4 }
+  ]
+}
