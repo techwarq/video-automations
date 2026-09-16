@@ -1,5 +1,6 @@
 """
-Clep platform — see your features, make clips. No build step.
+Clep platform — API only, no UI. The dashboard lives in the separate
+Next.js app (techwarq/clep); this is just the backend it talks to.
 
   python platform/server.py [--port 8787]
 
@@ -8,7 +9,7 @@ Stdlib only (http.server + threading). The SDK points here:
   <script src="@clep/sdk/clep.js" data-registry="http://localhost:8787/api/ingest"></script>
 
 Routes:
-  GET  /                        dashboard UI
+  GET  /                        {service, message} — not a UI, just identifies the API
   GET  /api/health              no auth — hosted liveness check
   GET  /api/features?url=...    scan a live app (agent.discover, 60s cache) + registry merge
   GET  /api/registry            everything known (scans + SDK live ingests)
@@ -17,9 +18,15 @@ Routes:
   GET  /api/jobs                job list (newest first)
   GET  /api/jobs/<id>           job detail {status, out, error}
   GET  /outputs/<file>          finished MP4s
+  POST /auth/signup             {email, password, name} -> {token, api_key, name}
+  POST /auth/login              {email, password} -> {token, api_key, name}
+  GET  /auth/me                 Authorization: Bearer <token> -> {email, name, api_key}
 
 Auth: set CLEP_API_KEYS=key1,key2 to require X-API-Key (or Bearer) on /api/*.
-Empty = open (local dev). HOST/PORT envs supported for hosting.
+Per-user keys minted by /auth/signup or /auth/login (see auth.py, Firestore-
+backed) work the same way — CLEP_AUTH_SECRET must be set for those to mint
+valid tokens. Empty CLEP_API_KEYS = open (local dev). HOST/PORT envs
+supported for hosting.
 """
 
 from __future__ import annotations
@@ -40,6 +47,8 @@ sys.path.insert(0, str(REPO / "pipeline_clep"))
 
 import agent
 import polish
+
+import auth
 
 REGISTRY_PATH = HERE / "registry.json"
 OUTPUT_DIR = REPO / "pipeline_clep" / "output"
@@ -194,10 +203,20 @@ class Handler(BaseHTTPRequestHandler):
         if not allowed:
             return True
         api_key = (self.headers.get("X-API-Key") or "").strip()
-        auth = (self.headers.get("Authorization") or "").strip()
-        if auth.lower().startswith("bearer "):
-            auth = auth[7:].strip()
-        return api_key in allowed or auth in allowed
+        bearer = (self.headers.get("Authorization") or "").strip()
+        if bearer.lower().startswith("bearer "):
+            bearer = bearer[7:].strip()
+        for key in (api_key, bearer):
+            if not key:
+                continue
+            if key in allowed:
+                return True
+            try:  # per-user key issued via /auth/signup or /auth/login
+                if auth.get_user_by_api_key(key):
+                    return True
+            except Exception:
+                pass
+        return False
 
     def _require_auth(self) -> bool:
         if self._authorized():
@@ -213,7 +232,7 @@ class Handler(BaseHTTPRequestHandler):
         if url.path.startswith("/api/") and not self._require_auth():
             return
         if url.path == "/":
-            self._serve_file(HERE / "dashboard.html", "text/html")
+            self._json({"service": "clep-platform", "message": "API only — see /api/health", "version": "0.2.0"})
         elif url.path == "/api/registry":
             self._json(_load_registry())
         elif url.path == "/api/features":
@@ -240,6 +259,14 @@ class Handler(BaseHTTPRequestHandler):
             if not f.exists() or f.suffix != ".mp4":
                 return self._json({"error": "not found"}, 404)
             self._serve_file(f, "video/mp4")
+        elif url.path == "/auth/me":
+            token = (self.headers.get("Authorization") or "").strip()
+            if token.lower().startswith("bearer "):
+                token = token[7:].strip()
+            user = auth.get_user_by_token(token) if token else None
+            if not user:
+                return self._json({"error": "unauthorized"}, 401)
+            self._json(user)
         else:
             self._json({"error": "not found"}, 404)
 
@@ -269,6 +296,29 @@ class Handler(BaseHTTPRequestHandler):
             t = threading.Thread(target=_run_clip_job, args=(jid, body), daemon=True)
             t.start()
             return self._json({"job_id": jid, "status": "queued"})
+        if url.path == "/auth/signup":
+            body = self._read_json()
+            email, password, name = body.get("email"), body.get("password"), body.get("name")
+            if not email or not password or not name:
+                return self._json({"error": "email, password, and name required"}, 400)
+            try:
+                return self._json(auth.create_user(email, password, name))
+            except ValueError as e:
+                return self._json({"error": str(e)}, 409)
+            except Exception as e:  # noqa: BLE001
+                return self._json({"error": f"{type(e).__name__}: {e}"}, 500)
+        if url.path == "/auth/login":
+            body = self._read_json()
+            email, password = body.get("email"), body.get("password")
+            if not email or not password:
+                return self._json({"error": "email and password required"}, 400)
+            try:
+                result = auth.verify_login(email, password)
+            except Exception as e:  # noqa: BLE001
+                return self._json({"error": f"{type(e).__name__}: {e}"}, 500)
+            if not result:
+                return self._json({"error": "invalid email or password"}, 401)
+            return self._json(result)
         return self._json({"error": "not found"}, 404)
 
     def _serve_file(self, path: Path, ctype: str) -> None:

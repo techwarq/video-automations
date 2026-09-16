@@ -11,7 +11,7 @@ COPY platform/requirements.clep.txt .
 RUN pip install --no-cache-dir -r requirements.clep.txt
 
 COPY pipeline_clep/ pipeline_clep/
-COPY platform/server.py platform/dashboard.html platform/
+COPY platform/server.py platform/auth.py platform/
 
 # State (registry.json, jobs.json, output MP4s) lives on a mounted volume.
 RUN mkdir -p /data/output \

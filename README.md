@@ -73,11 +73,13 @@ python allore.py --mode clep --url https://acme.ai/dashboard --name ai-research 
     --out pipeline_clep/output/ai-multi.mp4
 ```
 
-## Clep platform (dashboard — see features, Make Clip)
+## Clep platform (API backend — no UI here, that lives in the Next.js app)
 
 ```bash
 python platform/server.py --port 8787
-# open http://127.0.0.1:8787 — scan an app, pick a feature, Make Clip,
-# watch the job record + edit, preview + download the MP4.
+# GET  /api/health              liveness
+# GET  /api/features?url=...    scan a live app for data-clep features
+# POST /api/clips                {url, name, ...} -> job_id
+# GET  /api/jobs / /api/jobs/<id>  poll job status
 # SDK live reports: data-registry="http://localhost:8787/api/ingest"
 ```
