@@ -1,0 +1,404 @@
+[
+  {
+    "id": 0,
+    "start": 0.0,
+    "end": 6.12,
+    "narration_snippet": "How did an AI video startup reach a $200 million annual revenue run rate so insanely fast?",
+    "role": "hook",
+    "visual_kind": "image",
+    "image_query": "$200 million revenue chart glowing neon finance tech background",
+    "video_query": null,
+    "on_screen_text": "$200M RUN RATE",
+    "text_style": "stat",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "cut",
+      "duration": 0.07
+    },
+    "caption_mode": "off",
+    "pace": 0.9,
+    "candidate_images": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_5.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_6.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_7.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_8.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_9.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_10.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_11.jpg"
+    ],
+    "refinements": [
+      {
+        "query": "AI video startup annual revenue run rate chart diagram",
+        "added": 6
+      }
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_3.jpg",
+    "focus_point": {
+      "x": 0.76,
+      "y": 0.52
+    },
+    "prepped_image_path": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/assets/beat_0_prepped.jpg",
+    "focus_point_card": {
+      "x": 0.632701030927835,
+      "y": 0.52
+    }
+  },
+  {
+    "id": 1,
+    "start": 6.12,
+    "end": 7.2,
+    "narration_snippet": "Meet Higgsfield AI.",
+    "role": "body",
+    "visual_kind": "image",
+    "image_query": "modern minimalist startup logo dark studio lighting product shot",
+    "video_query": null,
+    "on_screen_text": "MEET HIGGSFIELD",
+    "text_style": "label",
+    "motion": "pan_right",
+    "transition": {
+      "type": "fadeblack",
+      "duration": 0.32
+    },
+    "caption_mode": "on",
+    "pace": 0.9,
+    "candidate_images": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_5.webp",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_6.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_7.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_8.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_9.jpg"
+    ],
+    "refinements": [
+      {
+        "query": "Higgsfield AI logo or brand introduction slide",
+        "added": 5
+      }
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_0.jpg",
+    "focus_point": {
+      "x": 0.48,
+      "y": 0.45
+    },
+    "prepped_image_path": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/assets/beat_1_prepped.jpg",
+    "focus_point_card": {
+      "x": 0.48,
+      "y": 0.5006756756756757
+    }
+  },
+  {
+    "id": 2,
+    "start": 7.2,
+    "end": 12.96,
+    "narration_snippet": "Instead of making users learn complicated video software, Higgsfield made cinematic AI video creation ridiculously simple.",
+    "role": "body",
+    "visual_kind": "diagram",
+    "image_query": "complex video editor vs simple button comparison flat illustration",
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "headline",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "zoomin",
+      "duration": 0.3
+    },
+    "caption_mode": "on",
+    "pace": 0.9,
+    "diagram": {
+      "style": "dark",
+      "nodes": [
+        {
+          "id": "n1",
+          "label": "COMPLEX TOOLS",
+          "x": 0.25,
+          "y": 0.5,
+          "w": 0.2,
+          "h": 0.2,
+          "shape": "rect",
+          "emph": false
+        },
+        {
+          "id": "n2",
+          "label": "ZERO LEARNING",
+          "x": 0.75,
+          "y": 0.5,
+          "w": 0.2,
+          "h": 0.2,
+          "shape": "oval",
+          "emph": true
+        }
+      ],
+      "arrows": [
+        {
+          "from": "n1",
+          "to": "n2",
+          "label": "REPLACED BY",
+          "path": "straight"
+        }
+      ],
+      "callouts": []
+    },
+    "candidate_images": [],
+    "selected_image": null,
+    "focus_point": null,
+    "prepped_image_path": null,
+    "focus_point_card": null
+  },
+  {
+    "id": 3,
+    "start": 12.96,
+    "end": 16.92,
+    "narration_snippet": "Creators could generate shots, camera movements, and entire videos in minutes.",
+    "role": "body",
+    "visual_kind": "image",
+    "image_query": "mobile video editing interface green screen overlay UI",
+    "video_query": "ai video generation workflow timeline edit",
+    "on_screen_text": "MINUTES, NOT DAYS",
+    "text_style": "label",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "smoothleft",
+      "duration": 0.3
+    },
+    "caption_mode": "on",
+    "pace": 0.9,
+    "candidate_images": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_5.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_6.webp",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_7.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_8.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_9.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_10.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_11.jpg"
+    ],
+    "refinements": [
+      {
+        "query": "AI video generation interface showing camera movement controls and video frames",
+        "added": 6
+      }
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_2.jpg",
+    "focus_point": {
+      "x": 0.42,
+      "y": 0.42
+    },
+    "prepped_image_path": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/assets/beat_3_prepped.jpg",
+    "focus_point_card": {
+      "x": 0.46569072164948455,
+      "y": 0.42000000000000004
+    }
+  },
+  {
+    "id": 4,
+    "start": 16.92,
+    "end": 22.68,
+    "narration_snippet": "And they targeted a huge market: creators, marketers, brands, and agencies that constantly need new content.",
+    "role": "body",
+    "visual_kind": "image",
+    "image_query": "diverse group of digital creators filming and editing on laptops phones cafe",
+    "video_query": null,
+    "on_screen_text": "EVERYONE NEEDS CONTENT",
+    "text_style": "headline",
+    "motion": "zoom_out",
+    "transition": {
+      "type": "fade",
+      "duration": 0.25
+    },
+    "caption_mode": "on",
+    "pace": 0.9,
+    "candidate_images": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_5.jpg"
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_1.jpg",
+    "focus_point": {
+      "x": 0.83,
+      "y": 0.36
+    },
+    "prepped_image_path": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/assets/beat_4_prepped.jpg",
+    "focus_point_card": {
+      "x": 0.83,
+      "y": 0.4995135135135135
+    }
+  },
+  {
+    "id": 5,
+    "start": 22.68,
+    "end": 27.36,
+    "narration_snippet": "That created a powerful growth loop \u2014 more content, more sharing, more users.",
+    "role": "body",
+    "visual_kind": "diagram",
+    "image_query": "viral growth flywheel circular infographic design",
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "headline",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "hblur",
+      "duration": 0.28
+    },
+    "caption_mode": "on",
+    "pace": 0.9,
+    "diagram": {
+      "style": "whiteboard",
+      "nodes": [
+        {
+          "id": "g1",
+          "label": "POST",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 0.18,
+          "h": 0.18,
+          "shape": "oval",
+          "emph": false
+        },
+        {
+          "id": "g2",
+          "label": "SHARE",
+          "x": 0.75,
+          "y": 0.55,
+          "w": 0.18,
+          "h": 0.18,
+          "shape": "oval",
+          "emph": true
+        },
+        {
+          "id": "g3",
+          "label": "GROW",
+          "x": 0.25,
+          "y": 0.55,
+          "w": 0.18,
+          "h": 0.18,
+          "shape": "oval",
+          "emph": false
+        }
+      ],
+      "arrows": [
+        {
+          "from": "g1",
+          "to": "g2",
+          "label": null,
+          "path": "straight"
+        },
+        {
+          "from": "g2",
+          "to": "g3",
+          "label": null,
+          "path": "straight"
+        },
+        {
+          "from": "g3",
+          "to": "g1",
+          "label": null,
+          "path": "elbow"
+        }
+      ],
+      "callouts": [
+        {
+          "text": "EXPONENTIAL FEEDBACK",
+          "x": 0.5,
+          "y": 0.85,
+          "big": true,
+          "emph": false
+        }
+      ]
+    },
+    "candidate_images": [],
+    "selected_image": null,
+    "focus_point": null,
+    "prepped_image_path": null,
+    "focus_point_card": null
+  },
+  {
+    "id": 6,
+    "start": 27.36,
+    "end": 33.84,
+    "narration_snippet": "By January 2026, Higgsfield said it had 15 million users and was generating 4.5 million videos every day.",
+    "role": "body",
+    "visual_kind": "image",
+    "image_query": "dynamic data dashboard analytics rising graph bright blue UI mockup",
+    "video_query": null,
+    "on_screen_text": "15M USERS \u2022 4.5M/DAY",
+    "text_style": "stat",
+    "motion": "pan_left",
+    "transition": {
+      "type": "fadewhite",
+      "duration": 0.32
+    },
+    "caption_mode": "on",
+    "pace": 0.9,
+    "candidate_images": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_5.jpg"
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_2.jpg",
+    "focus_point": {
+      "x": 0.38,
+      "y": 0.25
+    },
+    "prepped_image_path": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/assets/beat_6_prepped.jpg",
+    "focus_point_card": {
+      "x": 0.38,
+      "y": 0.28074324324324323
+    }
+  },
+  {
+    "id": 7,
+    "start": 33.84,
+    "end": 39.6,
+    "narration_snippet": "And that's how a video AI startup went from zero\u2026 to a $200M annual run rate.",
+    "role": "payoff",
+    "visual_kind": "image",
+    "image_query": "luxury tech office window overlooking city skyline golden hour cinematic shot",
+    "video_query": null,
+    "on_screen_text": "ZERO TO $200M",
+    "text_style": "headline",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "fade",
+      "duration": 0.25
+    },
+    "caption_mode": "on",
+    "pace": 0.9,
+    "candidate_images": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_5.jpg"
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_3.jpg",
+    "focus_point": {
+      "x": 0.68,
+      "y": 0.58
+    },
+    "prepped_image_path": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/assets/beat_7_prepped.jpg",
+    "focus_point_card": {
+      "x": 0.68,
+      "y": 0.5692702702702702
+    }
+  }
+]

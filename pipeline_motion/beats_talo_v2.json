@@ -1,0 +1,266 @@
+[
+  {
+    "id": 0,
+    "start": 0.0,
+    "end": 4.0,
+    "narration_snippet": "You have work to do. And you don't want to do it.",
+    "role": "hook",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "headline",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "cut",
+      "duration": 0.07
+    },
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "talo_dark",
+      "layout": "editorial_black",
+      "main": "YOU HAVE WORK TO DO.",
+      "flashes": [
+        "2,431 leads to research",
+        "18,000 records to clean",
+        "500 invoices to process",
+        "7,200 products to upload"
+      ],
+      "final": "AND YOU DON'T WANT TO DO IT."
+    }
+  },
+  {
+    "id": 1,
+    "start": 4.0,
+    "end": 8.0,
+    "narration_snippet": "Hire someone. Do it yourself. Operate another AI tool. There's another way.",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "label",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "fadewhite",
+      "duration": 0.32
+    },
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "talo",
+      "layout": "chaos_cards",
+      "cards": [
+        {
+          "title": "HIRE SOMEONE",
+          "price": "$18\u201330/hr",
+          "foot": "WAITING..."
+        },
+        {
+          "title": "DO IT YOURSELF",
+          "price": "4 HOURS",
+          "foot": "YOUR TIME"
+        },
+        {
+          "title": "USE AN AI TOOL",
+          "price": "YOU STILL HAVE TO",
+          "foot": "OPERATE IT"
+        }
+      ],
+      "freeze_text": "THERE'S ANOTHER WAY."
+    }
+  },
+  {
+    "id": 2,
+    "start": 8.0,
+    "end": 12.0,
+    "narration_snippet": "Hire an AI freelancer. Give them the work. They get it done.",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "headline",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "fade",
+      "duration": 0.28
+    },
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "talo",
+      "layout": "talo_hero",
+      "line1": "HIRE AN AI FREELANCER.",
+      "line2": "GIVE THEM THE WORK.",
+      "accent": "FREELANCER."
+    }
+  },
+  {
+    "id": 3,
+    "start": 12.0,
+    "end": 19.0,
+    "narration_snippet": "Find one thousand US SaaS companies, their founders, funding and LinkedIn profiles. Got it. Five to seven hours. Maximum seventy dollars. Start work.",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "label",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "smoothleft",
+      "duration": 0.3
+    },
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "talo",
+      "layout": "chat_slick",
+      "query": "Find 1,000 US SaaS companies, their founders, funding and LinkedIn profiles.",
+      "badge": "TASK ACCEPTED",
+      "estimate": "ESTIMATE: 5\u20137 HOURS",
+      "maximum": "MAXIMUM: $70",
+      "response": "Got it. START WORK \u2192"
+    }
+  },
+  {
+    "id": 4,
+    "start": 19.0,
+    "end": 29.0,
+    "narration_snippet": "Talo searches. Verifies. Matches founders. Enriches data. One hundred twenty seven. Two eighty four. Five sixteen. Seven ninety three. One thousand companies. Three hours forty seven minutes. Current cost thirty seven dollars.",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "label",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "hblur",
+      "duration": 0.28
+    },
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "talo",
+      "layout": "browser_work",
+      "items": [
+        {
+          "label": "SEARCHING COMPANIES",
+          "status": "done"
+        },
+        {
+          "label": "VERIFYING WEBSITES",
+          "status": "done"
+        },
+        {
+          "label": "MATCHING FOUNDERS",
+          "status": "done"
+        },
+        {
+          "label": "ENRICHING DATA",
+          "status": "active"
+        }
+      ],
+      "count_start": 127,
+      "count_end": 1000,
+      "ticker_label": "companies",
+      "runtime": "03h 47m",
+      "cost": "CURRENT COST $37.83",
+      "url": "talo.abstraklabs.com  \u2022  Working\u2026",
+      "sequence": [
+        127,
+        284,
+        516,
+        793,
+        1000
+      ]
+    }
+  },
+  {
+    "id": 5,
+    "start": 29.0,
+    "end": 34.0,
+    "narration_snippet": "One thousand qualified companies. One thousand founders. Funding data. LinkedIn profiles. Done. Four hours eighteen minutes. Forty three dollars. You paid for the work actually performed.",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "stat",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "fadeblack",
+      "duration": 0.32
+    },
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "talo",
+      "layout": "spreadsheet_result",
+      "headers": [
+        "COMPANY",
+        "FOUNDER",
+        "FUNDING",
+        "LINKEDIN"
+      ],
+      "time": "4h 18m",
+      "price": "$43.00",
+      "tally": "1,000 QUALIFIED COMPANIES  \u2022  1,000 FOUNDERS  \u2022  FUNDING  \u2022  LINKEDIN",
+      "sub": "You paid for the work actually performed."
+    }
+  },
+  {
+    "id": 6,
+    "start": 34.0,
+    "end": 40.0,
+    "narration_snippet": "You don't need another AI tool. You need the work done.",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "headline",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "fade",
+      "duration": 0.28
+    },
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "olive",
+      "layout": "editorial_statement",
+      "line1": "YOU DON'T NEED ANOTHER AI TOOL.",
+      "line2": "YOU NEED THE WORK DONE.",
+      "accent": "WORK DONE."
+    }
+  },
+  {
+    "id": 7,
+    "start": 40.0,
+    "end": 45.5,
+    "narration_snippet": "Talo. Hire an AI freelancer. Ten dollars per hour. Give us a task.",
+    "role": "payoff",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "headline",
+    "motion": "zoom_in",
+    "transition": {
+      "type": "fade",
+      "duration": 0.25
+    },
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "talo",
+      "layout": "talo_logo",
+      "text": "talo",
+      "tagline": "HIRE AN AI FREELANCER  \u2022  $10 / HOUR  \u2022  talo.abstraklabs.co"
+    }
+  }
+]

@@ -1,0 +1,356 @@
+[
+  {
+    "beat_id": 0,
+    "image_query": "$200 million revenue chart glowing neon finance tech background",
+    "narration_snippet": "How did an AI video startup reach a $200 million annual revenue run rate so insanely fast?",
+    "candidates": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_5.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_6.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_7.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_8.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_9.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_10.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_11.jpg"
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_0/candidate_3.jpg",
+    "focus_point": {
+      "x": 0.76,
+      "y": 0.52
+    },
+    "scores": [
+      {
+        "index": 0,
+        "relevance": 7.0,
+        "clarity": 7.0,
+        "composition": 5.0,
+        "authenticity": 5.0
+      },
+      {
+        "index": 1,
+        "relevance": 5.0,
+        "clarity": 8.0,
+        "composition": 9.0,
+        "authenticity": 5.0
+      },
+      {
+        "index": 2,
+        "relevance": 5.0,
+        "clarity": 6.0,
+        "composition": 6.0,
+        "authenticity": 6.0
+      },
+      {
+        "index": 3,
+        "relevance": 8.0,
+        "clarity": 8.0,
+        "composition": 8.0,
+        "authenticity": 5.0
+      }
+    ],
+    "quality_ok": true,
+    "refined_query": null,
+    "refetch_rounds_used": 1,
+    "reasoning": "Candidate 3 is the best choice as it clearly visualizes revenue growth (rising green line graph) and money (dollar sign) within a digital/tech context (grid background) suitable for an AI startup topic. It also offers the best composition with a dark, open area on the left for text overlay. The focus point is the dollar sign, representing the $200 million revenue figure."
+  },
+  {
+    "beat_id": 1,
+    "image_query": "modern minimalist startup logo dark studio lighting product shot",
+    "narration_snippet": "Meet Higgsfield AI.",
+    "candidates": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_5.webp",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_6.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_7.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_8.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_9.jpg"
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_1/candidate_0.jpg",
+    "focus_point": {
+      "x": 0.48,
+      "y": 0.45
+    },
+    "scores": [
+      {
+        "index": 0,
+        "relevance": 2.0,
+        "clarity": 9.0,
+        "composition": 9.0,
+        "authenticity": 8.0
+      },
+      {
+        "index": 1,
+        "relevance": 2.0,
+        "clarity": 8.0,
+        "composition": 7.0,
+        "authenticity": 8.0
+      },
+      {
+        "index": 2,
+        "relevance": 2.0,
+        "clarity": 9.0,
+        "composition": 8.0,
+        "authenticity": 8.0
+      },
+      {
+        "index": 3,
+        "relevance": 2.0,
+        "clarity": 7.0,
+        "composition": 6.0,
+        "authenticity": 8.0
+      }
+    ],
+    "quality_ok": false,
+    "refined_query": "Higgsfield AI logo or product interface screenshot",
+    "refetch_rounds_used": 1,
+    "reasoning": "None of the candidates depict Higgsfield AI; they show unrelated brand identities like 'noon-lightning' and 'SCOPE'. Candidate 0 is the best structural match for a company introduction (logo + name on a clean black background), but the content is completely wrong, necessitating a lower quality rating and a refined search query. The focus point is the logo/text cluster which the narration would incorrectly be pointing to."
+  },
+  {
+    "beat_id": 2,
+    "image_query": "complex video editor vs simple button comparison flat illustration",
+    "narration_snippet": "Instead of making users learn complicated video software, Higgsfield made cinematic AI video creation ridiculously simple.",
+    "candidates": [],
+    "selected_image": null,
+    "focus_point": null,
+    "scores": [],
+    "quality_ok": null,
+    "refined_query": null,
+    "refetch_rounds_used": 0,
+    "reasoning": "Diagram beat \u2014 rendered by motion_gfx, no image selection."
+  },
+  {
+    "beat_id": 3,
+    "image_query": "mobile video editing interface green screen overlay UI",
+    "narration_snippet": "Creators could generate shots, camera movements, and entire videos in minutes.",
+    "candidates": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_5.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_6.webp",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_7.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_8.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_9.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_10.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_11.jpg"
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_3/candidate_2.jpg",
+    "focus_point": {
+      "x": 0.42,
+      "y": 0.42
+    },
+    "scores": [
+      {
+        "index": 0,
+        "relevance": 2.0,
+        "clarity": 8.0,
+        "composition": 9.0,
+        "authenticity": 3.0
+      },
+      {
+        "index": 1,
+        "relevance": 3.0,
+        "clarity": 6.0,
+        "composition": 6.0,
+        "authenticity": 5.0
+      },
+      {
+        "index": 2,
+        "relevance": 8.0,
+        "clarity": 9.0,
+        "composition": 8.0,
+        "authenticity": 6.0
+      },
+      {
+        "index": 3,
+        "relevance": 3.0,
+        "clarity": 4.0,
+        "composition": 3.0,
+        "authenticity": 6.0
+      }
+    ],
+    "quality_ok": true,
+    "refined_query": null,
+    "refetch_rounds_used": 1,
+    "reasoning": "Candidate 2 best visualizes the narration with a storyboard-style grid (representing shots) and a directional arrow/pivot (representing camera movements) over green placeholders (representing generated videos). The composition is clean and diagrammatic, suitable for an explainer video."
+  },
+  {
+    "beat_id": 4,
+    "image_query": "diverse group of digital creators filming and editing on laptops phones cafe",
+    "narration_snippet": "And they targeted a huge market: creators, marketers, brands, and agencies that constantly need new content.",
+    "candidates": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_5.jpg"
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_4/candidate_1.jpg",
+    "focus_point": {
+      "x": 0.83,
+      "y": 0.36
+    },
+    "scores": [
+      {
+        "index": 0,
+        "relevance": 8.0,
+        "clarity": 7.0,
+        "composition": 7.0,
+        "authenticity": 7.0
+      },
+      {
+        "index": 1,
+        "relevance": 9.0,
+        "clarity": 8.0,
+        "composition": 8.0,
+        "authenticity": 7.0
+      },
+      {
+        "index": 2,
+        "relevance": 8.0,
+        "clarity": 8.0,
+        "composition": 8.0,
+        "authenticity": 7.0
+      },
+      {
+        "index": 3,
+        "relevance": 4.0,
+        "clarity": 6.0,
+        "composition": 6.0,
+        "authenticity": 8.0
+      }
+    ],
+    "quality_ok": true,
+    "refined_query": null,
+    "refetch_rounds_used": 0,
+    "reasoning": "Candidate 1 is the best fit because the whiteboard explicitly displays 'VIDEO IDEAS' (with 'VLOG' and 'TUTORIAL'), which directly visualizes the 'constantly need new content' aspect of the narration, while the team of editors, photographers, and podcasters represents the target market of creators and agencies. The focus point is the whiteboard to anchor the concept of content ideation."
+  },
+  {
+    "beat_id": 5,
+    "image_query": "viral growth flywheel circular infographic design",
+    "narration_snippet": "That created a powerful growth loop \u2014 more content, more sharing, more users.",
+    "candidates": [],
+    "selected_image": null,
+    "focus_point": null,
+    "scores": [],
+    "quality_ok": null,
+    "refined_query": null,
+    "refetch_rounds_used": 0,
+    "reasoning": "Diagram beat \u2014 rendered by motion_gfx, no image selection."
+  },
+  {
+    "beat_id": 6,
+    "image_query": "dynamic data dashboard analytics rising graph bright blue UI mockup",
+    "narration_snippet": "By January 2026, Higgsfield said it had 15 million users and was generating 4.5 million videos every day.",
+    "candidates": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_5.jpg"
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_6/candidate_2.jpg",
+    "focus_point": {
+      "x": 0.38,
+      "y": 0.25
+    },
+    "scores": [
+      {
+        "index": 0,
+        "relevance": 4.0,
+        "clarity": 9.0,
+        "composition": 9.0,
+        "authenticity": 8.0
+      },
+      {
+        "index": 1,
+        "relevance": 3.0,
+        "clarity": 4.0,
+        "composition": 5.0,
+        "authenticity": 5.0
+      },
+      {
+        "index": 2,
+        "relevance": 6.0,
+        "clarity": 8.0,
+        "composition": 7.0,
+        "authenticity": 8.0
+      },
+      {
+        "index": 3,
+        "relevance": 4.0,
+        "clarity": 5.0,
+        "composition": 5.0,
+        "authenticity": 4.0
+      }
+    ],
+    "quality_ok": true,
+    "refined_query": null,
+    "refetch_rounds_used": 0,
+    "reasoning": "Candidate 2 is the best choice as it presents a clean, professional dashboard UI with legible metrics like 'New Customers' and 'Audience Growth', which serve as the closest visual proxy for the narration's statistics about user count and platform growth. While the specific numbers and brand ('Nexora') do not match 'Higgsfield', the composition and clarity make it suitable for an explainer video overlay."
+  },
+  {
+    "beat_id": 7,
+    "image_query": "luxury tech office window overlooking city skyline golden hour cinematic shot",
+    "narration_snippet": "And that's how a video AI startup went from zero\u2026 to a $200M annual run rate.",
+    "candidates": [
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_0.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_1.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_2.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_3.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_4.jpg",
+      "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_5.jpg"
+    ],
+    "selected_image": "/Users/sonalinayak/allore_v1-be/allore_v1/pipeline/cache/beat_7/candidate_3.jpg",
+    "focus_point": {
+      "x": 0.68,
+      "y": 0.58
+    },
+    "scores": [
+      {
+        "index": 0,
+        "relevance": 8.0,
+        "clarity": 9.0,
+        "composition": 7.0,
+        "authenticity": 7.0
+      },
+      {
+        "index": 1,
+        "relevance": 7.0,
+        "clarity": 7.0,
+        "composition": 6.0,
+        "authenticity": 6.0
+      },
+      {
+        "index": 2,
+        "relevance": 6.0,
+        "clarity": 7.0,
+        "composition": 7.0,
+        "authenticity": 6.0
+      },
+      {
+        "index": 3,
+        "relevance": 9.0,
+        "clarity": 8.0,
+        "composition": 9.0,
+        "authenticity": 7.0
+      }
+    ],
+    "quality_ok": true,
+    "refined_query": null,
+    "refetch_rounds_used": 0,
+    "reasoning": "Candidate 3 is the best fit, using the classic 'wealthy CEO' visual trope (marble floors, skyline view, silhouette) to represent the $200M milestone, with a large open reflective floor area at the bottom ideal for text overlay. The focus is on the CEO silhouette, representing the founder who achieved this success."
+  }
+]

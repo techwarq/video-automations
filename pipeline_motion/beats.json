@@ -1,0 +1,172 @@
+[
+  {
+    "id": 0,
+    "start": 0.0,
+    "end": 4.2,
+    "narration_snippet": "We give your agent search and fetch one hundred percent free.",
+    "role": "hook",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "headline",
+    "motion": "zoom_in",
+    "transition": {"type": "fade", "duration": 0.30},
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "light",
+      "layout": "headline",
+      "text": "We give your agent\nsearch & fetch 100% FREE.",
+      "accent": "100% FREE."
+    }
+  },
+  {
+    "id": 1,
+    "start": 4.2,
+    "end": 8.0,
+    "narration_snippet": "Zero dollars. No subscriptions. No quotas.",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "stat",
+    "motion": "zoom_in",
+    "transition": {"type": "fadewhite", "duration": 0.32},
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "blue",
+      "layout": "stat_blue",
+      "stat": "$0",
+      "check": true,
+      "lines": ["No subscriptions.", "No quotas."]
+    }
+  },
+  {
+    "id": 2,
+    "start": 8.0,
+    "end": 13.5,
+    "narration_snippet": "What happened in AI today?",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "label",
+    "motion": "zoom_in",
+    "transition": {"type": "smoothleft", "duration": 0.30},
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "light",
+      "layout": "search_typing",
+      "query": "What happened in AI today?"
+    }
+  },
+  {
+    "id": 3,
+    "start": 13.5,
+    "end": 19.8,
+    "narration_snippet": "Searching live news. We fetch real sources instantly.",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "label",
+    "motion": "zoom_in",
+    "transition": {"type": "fade", "duration": 0.28},
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "light",
+      "layout": "badge_cards",
+      "badge": "Searching live news • • •",
+      "cards": [
+        {"source": "GatesNotes", "title": "The turbulent AI era is here. The choices we make now are critical.", "time": "29 minutes ago"},
+        {"source": "The Washington Post", "title": "Over 1,000 AI agents worked together in OpenAI hack, report reveals", "time": "1 hour ago"}
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "start": 19.8,
+    "end": 25.2,
+    "narration_snippet": "We parse, rank, and summarize in seconds.",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "headline",
+    "motion": "zoom_in",
+    "transition": {"type": "hblur", "duration": 0.28},
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "gray",
+      "layout": "diagram",
+      "diagram": {
+        "style": "light",
+        "nodes": [
+          {"id": "q", "label": "QUERY", "x": 0.22, "y": 0.5, "w": 0.18, "h": 0.18, "shape": "rect"},
+          {"id": "s", "label": "SEARCH", "x": 0.46, "y": 0.5, "w": 0.18, "h": 0.18, "shape": "oval", "emph": true},
+          {"id": "f", "label": "FETCH", "x": 0.70, "y": 0.5, "w": 0.18, "h": 0.18, "shape": "rect"},
+          {"id": "a", "label": "ANSWER", "x": 0.88, "y": 0.5, "w": 0.14, "h": 0.14, "shape": "oval"}
+        ],
+        "arrows": [
+          {"from": "q", "to": "s", "path": "straight"},
+          {"from": "s", "to": "f", "path": "straight"},
+          {"from": "f", "to": "a", "path": "straight"}
+        ],
+        "callouts": []
+      }
+    }
+  },
+  {
+    "id": 5,
+    "start": 25.2,
+    "end": 30.0,
+    "narration_snippet": "Every source cited. Every answer grounded.",
+    "role": "body",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "headline",
+    "motion": "zoom_in",
+    "transition": {"type": "dissolve", "duration": 0.35},
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "light",
+      "layout": "headline",
+      "text": "Grounded in real sources.\nEvery answer cited.",
+      "accent": "cited."
+    }
+  },
+  {
+    "id": 6,
+    "start": 30.0,
+    "end": 35.1,
+    "narration_snippet": "One search, four pages, zero cost.",
+    "role": "payoff",
+    "visual_kind": "kinetic",
+    "image_query": null,
+    "video_query": null,
+    "on_screen_text": null,
+    "text_style": "stat",
+    "motion": "zoom_in",
+    "transition": {"type": "fade", "duration": 0.25},
+    "caption_mode": "off",
+    "pace": 1.0,
+    "kinetic": {
+      "style": "gray",
+      "layout": "grid_cards",
+      "count": 4,
+      "pill": "1 search · 4 pages · $0.00"
+    }
+  }
+]
