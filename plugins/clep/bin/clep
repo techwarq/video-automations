@@ -4,12 +4,14 @@
 Talks to the hosted Clep backend so Claude Code can scan features and
 render clips without any local pipeline install.
 
-Env:
+Env (checked first; falls back to ~/.clep/config.json, written by `clep
+configure`):
   CLEP_API_URL  base URL, default http://127.0.0.1:8787
   CLEP_API_KEY  platform API key (dashboard -> API Keys). Required when the
                 backend sets CLEP_API_KEYS; sent as X-API-Key.
 
 Usage:
+  clep configure [--url URL] [--key KEY]   interactive if flags omitted
   clep scan <url>
   clep clip --url URL --name NAME [--query Q --style S --fps N
             --quality {720p,1080p} --steps-file plan.json --wait [--out f.mp4]]
@@ -27,14 +29,31 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+from pathlib import Path
+
+_CONFIG_PATH = Path.home() / ".clep" / "config.json"
+
+
+def _load_config() -> dict:
+    try:
+        return json.loads(_CONFIG_PATH.read_text())
+    except Exception:
+        return {}
+
+
+def _save_config(cfg: dict) -> None:
+    _CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _CONFIG_PATH.write_text(json.dumps(cfg, indent=2))
+    _CONFIG_PATH.chmod(0o600)
 
 
 def _base() -> str:
-    return (os.environ.get("CLEP_API_URL") or "http://127.0.0.1:8787").rstrip("/")
+    url = os.environ.get("CLEP_API_URL") or _load_config().get("api_url") or "http://127.0.0.1:8787"
+    return url.rstrip("/")
 
 
 def _key() -> str:
-    return os.environ.get("CLEP_API_KEY", "").strip()
+    return (os.environ.get("CLEP_API_KEY") or _load_config().get("api_key") or "").strip()
 
 
 def _req(method: str, path: str, body: dict | None = None) -> tuple[int, dict | bytes]:
@@ -58,9 +77,60 @@ def _req(method: str, path: str, body: dict | None = None) -> tuple[int, dict | 
         except Exception:
             payload = {"error": f"HTTP {e.code}"}
         if e.code == 401:
-            payload = {"error": "unauthorized: set a valid CLEP_API_KEY (dashboard -> API Keys)."}
+            payload = {"error": "unauthorized: no valid API key. Run `clep configure` and paste the key "
+                                 "from the dashboard -> API Keys."}
         print(f"[clep] error: {payload.get('error', payload)}", file=sys.stderr)
         sys.exit(1)
+
+
+def _box(title: str, lines: list[str], footer: str, inner: int = 60, max_inner: int = 96) -> None:
+    import textwrap
+    # URLs stay intact (breaking one mid-string makes it unusable) — everything
+    # else wraps to `inner` so prose doesn't stretch the box.
+    wrapped = [
+        w for l in lines
+        for w in ([l] if "://" in l else (textwrap.wrap(l, inner) or [""]))
+    ]
+    content_width = max(len(title), len(footer), *(len(l) for l in wrapped))
+    width = min(max(content_width, inner), max_inner) + 2
+    print("┌" + "─" * width + "┐")
+    print(f"│  {title.ljust(width - 2)}│")
+    print("│" + " " * width + "│")
+    for l in wrapped:
+        print(f"│  {l.ljust(width - 2)}│")
+    print("│" + " " * width + "│")
+    print(f"│  {footer.ljust(width - 2)}│")
+    print("└" + "─" * width + "┘")
+
+
+def cmd_configure(a) -> None:
+    cfg = _load_config()
+    url = a.url
+    key = a.key
+    interactive = sys.stdin.isatty() and not (url and key)
+    if interactive:
+        default_url = url or cfg.get("api_url") or "http://127.0.0.1:8787"
+        _box(
+            "API key",
+            [
+                "Clep needs an API key to render clips on your account.",
+                "",
+                "Get one from your Clep dashboard's API Keys page",
+                "(create a new one, or Copy an existing row).",
+            ],
+            "enter submit · esc to cancel (Ctrl+C)",
+        )
+        typed_url = input(f"\nCLEP_API_URL [{default_url}]: ").strip()
+        url = typed_url or default_url
+        while not key:
+            key = input("API key: ").strip()
+    if not url:
+        url = cfg.get("api_url") or "http://127.0.0.1:8787"
+    if not key:
+        print("[clep] error: no API key given (pass --key or run without flags to be prompted)", file=sys.stderr)
+        sys.exit(1)
+    _save_config({"api_url": url.rstrip("/"), "api_key": key})
+    print(f"[clep] saved {_CONFIG_PATH} (api_url={url})")
 
 
 def cmd_health(_a) -> None:
@@ -169,6 +239,11 @@ def cmd_job(a) -> None:
 def build() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="clep", description="Clep plugin CLI — features to MP4 via hosted backend.")
     sub = p.add_subparsers(dest="cmd", required=True)
+
+    cfg = sub.add_parser("configure", help="Save CLEP_API_URL/CLEP_API_KEY to ~/.clep/config.json.")
+    cfg.add_argument("--url", default=None)
+    cfg.add_argument("--key", default=None)
+    cfg.set_defaults(fn=cmd_configure)
 
     s = sub.add_parser("scan", help="List data-clep features on a live URL.")
     s.add_argument("url")
