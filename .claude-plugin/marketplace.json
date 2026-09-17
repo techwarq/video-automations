@@ -9,7 +9,7 @@
       "name": "clep",
       "source": "./plugins/clep",
       "description": "Instrument data-clep features and render 1080p60 product clips from the hosted platform.",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "author": {
         "name": "Clep"
       },

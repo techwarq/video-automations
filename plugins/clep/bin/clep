@@ -81,6 +81,18 @@ def _req(method: str, path: str, body: dict | None = None) -> tuple[int, dict | 
                                  "from the dashboard -> API Keys."}
         print(f"[clep] error: {payload.get('error', payload)}", file=sys.stderr)
         sys.exit(1)
+    except urllib.error.URLError as e:
+        # Connection-level failure (refused/DNS/timeout) — never reached the
+        # backend, so there was no HTTP response to read a 401 off of. Most
+        # common cause: nothing configured yet, so _base() fell through to
+        # the localhost dev default and nothing's listening there.
+        if not (os.environ.get("CLEP_API_URL") or _load_config().get("api_url")):
+            print(f"[clep] error: can't reach {url} — no CLEP_API_URL/CLEP_API_KEY configured yet. "
+                  f"Run `clep configure` (dashboard -> API Keys for the key).", file=sys.stderr)
+        else:
+            print(f"[clep] error: can't reach {url} ({e.reason}). Check the URL — "
+                  f"`clep configure` to fix it.", file=sys.stderr)
+        sys.exit(1)
 
 
 def _box(title: str, lines: list[str], footer: str, inner: int = 60, max_inner: int = 96) -> None:

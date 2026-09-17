@@ -2,7 +2,7 @@
   "name": "clep",
   "displayName": "Clep",
   "description": "Video layer for software products — instrument data-clep features with Claude, render 1080p60 product clips from the hosted platform.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "Clep"
   },
