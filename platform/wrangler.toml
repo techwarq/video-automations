@@ -1,0 +1,40 @@
+name = "clep-platform"
+main = "src/index.ts"
+compatibility_date = "2024-12-05"
+
+# Custom domain — the whole hostname routes to this Worker; every route is
+# then served under /v1 (see src/index.ts's basePath), e.g.
+# https://api.clep.abstraklabs.com/v1/api/health
+[[routes]]
+pattern = "api.clep.abstraklabs.com"
+custom_domain = true
+
+[observability]
+enabled = true
+
+# Comma-separated static keys, e.g. clep_live_abc,clep_live_xyz.
+# Empty = open (local dev). Set via `wrangler secret put` in prod instead
+# of here if it should stay out of source control.
+[vars]
+CLEP_API_KEYS = ""
+
+# Base URL of the pipeline_clep Cloud Run service, for the /internal/scan proxy.
+CLOUD_RUN_SCAN_URL = "https://clep-video-service-919279481036.us-central1.run.app"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "clep-db"
+database_id = "19b21e22-17d7-43a5-9af7-e0ea37a14224"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "OUTPUTS"
+bucket_name = "clep-outputs"
+
+[[queues.producers]]
+binding = "CLEP_JOBS"
+queue = "clep-jobs"
+
+# Secrets (set with `wrangler secret put <name>`, not committed here):
+#   CLEP_INTERNAL_SECRET  — shared secret Cloud Run uses to call /internal/*
+#   CLEP_AUTH_SECRET       — HMAC key for session tokens

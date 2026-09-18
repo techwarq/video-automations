@@ -1,0 +1,59 @@
+name: Deploy video service
+
+# Deploys pipeline_clep (the whole plan -> record -> edit/render pipeline)
+# to the clep-video-service Cloud Run service. Only fires when that service's
+# own code changes — platform/ (the Cloudflare Worker) and pipeline_motion/
+# have their own lifecycle and shouldn't trigger this.
+#
+# Auth is Workload Identity Federation, not a stored key: GitHub's OIDC token
+# is exchanged for short-lived GCP credentials at run time via the
+# video-automations-provider in the github-pool workload identity pool
+# (doctosheet-be project), scoped to this exact repo.
+#
+# Env vars (CLEP_INTERNAL_SECRET, CF_*, R2_*) are intentionally not set here —
+# gcloud run deploy carries forward the previous revision's env vars when you
+# don't pass --set-env-vars, so secrets stay managed out-of-band via
+# `gcloud run services update` and never touch this workflow or its logs.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pipeline_clep/**"
+      - "Dockerfile"
+      - ".github/workflows/deploy-video-service.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-video-service
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/919279481036/locations/global/workloadIdentityPools/github-pool/providers/video-automations-provider
+          service_account: github-deployer@doctosheet-be.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy clep-video-service \
+            --source . \
+            --project doctosheet-be \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --cpu 4 --memory 4Gi \
+            --no-cpu-throttling \
+            --min-instances 1 --max-instances 3 \
+            --timeout 600 --port 8788 \
+            --quiet

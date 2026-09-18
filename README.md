@@ -73,13 +73,22 @@ python allore.py --mode clep --url https://acme.ai/dashboard --name ai-research 
     --out pipeline_clep/output/ai-multi.mp4
 ```
 
-## Clep platform (API backend — no UI here, that lives in the Next.js app)
+## Clep platform (API + video service — no UI here, that lives in the Next.js app)
+
+Two services now: `platform/` is the API (Cloudflare Worker, Hono — auth,
+registry, job bookkeeping), `pipeline_clep/` is the video service (plan ->
+record -> edit/render, Cloud Run). They talk over a Cloudflare Queue + a
+shared internal secret. See `platform/DEPLOY.md` for the full deploy.
 
 ```bash
-python platform/server.py --port 8787
+# API (Cloudflare Worker), local dev
+cd platform && npm install && npm run dev
 # GET  /api/health              liveness
-# GET  /api/features?url=...    scan a live app for data-clep features
-# POST /api/clips                {url, name, ...} -> job_id
+# GET  /api/features?url=...    scan a live app for data-clep features (proxies to the video service)
+# POST /api/clips                {url, name, ...} -> job_id (enqueues onto clep-jobs)
 # GET  /api/jobs / /api/jobs/<id>  poll job status
 # SDK live reports: data-registry="http://localhost:8787/api/ingest"
+
+# Video service (Cloud Run image), local dev — polls the same queue
+python pipeline_clep/service.py --port 8788
 ```

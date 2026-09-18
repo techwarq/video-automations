@@ -1,4 +1,6 @@
-# Clep platform backend — hosted deploy.
+# Clep video service — hosted deploy (Cloud Run). Plans, records, and
+# edits/renders clips; the API (auth, registry, job bookkeeping) is a
+# separate Cloudflare Worker in platform/, not part of this image.
 # Playwright base image ships Chromium + deps; we add ffmpeg + Pillow only.
 FROM mcr.microsoft.com/playwright/python:v1.63.0-jammy
 
@@ -7,20 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
 
 WORKDIR /app
 
-COPY platform/requirements.clep.txt .
-RUN pip install --no-cache-dir -r requirements.clep.txt
+COPY pipeline_clep/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY pipeline_clep/ pipeline_clep/
-COPY platform/server.py platform/auth.py platform/
+RUN rm -rf pipeline_clep/output pipeline_clep/cache
 
-# State (registry.json, jobs.json, output MP4s) lives on a mounted volume.
-RUN mkdir -p /data/output \
-    && rm -rf pipeline_clep/output pipeline_clep/cache \
-    && ln -s /data/output pipeline_clep/output \
-    && ln -s /data/registry.json platform/registry.json \
-    && ln -s /data/jobs.json platform/jobs.json
+ENV HOST=0.0.0.0 PORT=8788
+EXPOSE 8788
 
-ENV HOST=0.0.0.0 PORT=8787
-EXPOSE 8787
-
-CMD ["python", "platform/server.py"]
+CMD ["python", "pipeline_clep/service.py"]

@@ -1,0 +1,21 @@
+{
+  "name": "clep-platform",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Clep API — Cloudflare Worker (Hono). Auth, registry, and job bookkeeping. The video pipeline itself runs as a separate service in pipeline_clep/ on Cloud Run.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply clep-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply clep-db --remote"
+  },
+  "dependencies": {
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241205.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^3.99.0"
+  }
+}

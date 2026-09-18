@@ -9,6 +9,5 @@ __pycache__/
 node_modules/
 pipeline_clep/output/
 pipeline_clep/cache/
-platform/jobs.json
-platform/registry.json
+platform/node_modules/
 .env
