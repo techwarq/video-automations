@@ -29,8 +29,20 @@ def _load_trace(trace_path: Path) -> dict:
     return json.loads(Path(trace_path).read_text())
 
 
+# Max window zoom per movement. calm holds the full window on the canvas
+# (no text cropped); dynamic keeps the old punchy push for feature demos.
+MOVEMENT_MAX_ZOOM = {"calm": 1.10, "standard": 1.35, "dynamic": 1.65}
+
+
+def _cap_zoom(keys: list[dict], movement: str | None) -> list[dict]:
+    if not movement or movement not in MOVEMENT_MAX_ZOOM:
+        return keys
+    cap = MOVEMENT_MAX_ZOOM[movement]
+    return [{**k, "zoom": min(float(k.get("zoom", 1.0)), cap)} for k in keys]
+
+
 def _plan_from_trace(trace: dict, aspect: str | None, style: str | None,
-                     duration: float | None) -> dict:
+                     duration: float | None, movement: str | None = None) -> dict:
     vw, vh = trace["viewport"]["w"], trace["viewport"]["h"]
     el = trace["element"]
     ecx = min(max(el["x"] + el["w"] / 2, 0.05), 0.95)
@@ -51,38 +63,58 @@ def _plan_from_trace(trace: dict, aspect: str | None, style: str | None,
         ],
     }
     plan = storyboard.build_plan(feature_like, duration=dur, aspect=aspect, style=style)
-    # Camera follows the ACTION CHAIN, not just the bbox: establish on the
-    # page -> one eased key per recorded focus/click (typing, buttons across
-    # states) -> settle on the whole element for the result.
-    el_c = {"x": ecx, "y": ecy}
-    focuses = list(trace.get("focuses") or [])
-    if not focuses:
-        # legacy traces: fall back to input/button points
-        if trace.get("input_xy"):
-            focuses.append({"t": dur * 0.30, **trace["input_xy"]})
-        if trace.get("button_xy"):
-            focuses.append({"t": dur * 0.50, **trace["button_xy"]})
-    mids = []
-    for fc in focuses:
-        t = (float(fc.get("t", 0)) - trim) / dur
-        if 0.03 <= t < 0.78:
-            mids.append({"t": t, "x": float(fc["x"]), "y": float(fc["y"])})
-    mids.sort(key=lambda m: m["t"])
-    if len(mids) > 4:  # spread cap: evenly subsample, keep first+last
-        idx = [round(i * (len(mids) - 1) / 3) for i in range(4)]
-        mids = [mids[i] for i in dict.fromkeys(idx)]
-    keys = []
-    for m in mids:
-        if not keys or m["t"] - keys[-1]["t"] >= 0.05:
-            keys.append(m)
-    push = plan["camera"][1]["zoom"]
-    plan["camera"] = (
-        [{"t": 0.00, "cx": 0.5, "cy": 0.5, "zoom": 1.0}]
-        + [{"t": m["t"], "cx": m["x"], "cy": m["y"], "zoom": push} for m in keys]
-        + [{"t": 0.86, "cx": ecx, "cy": ecy, "zoom": push},
-           {"t": 0.94, "cx": 0.5, "cy": 0.5, "zoom": 1.0},
-           {"t": 1.00, "cx": 0.5, "cy": 0.5, "zoom": 1.0}]
-    )
+    movement = movement or ("calm" if trace.get("kind") == "clep-tour" else "standard")
+
+    if trace.get("kind") == "clep-tour":
+        # Tour camera: hold the whole window wide. The source footage
+        # already scrolls through sections — any push-in would crop text
+        # and fight the scroll (the bug in the old portfolio clips).
+        # Just a barely-there drift so the frame feels alive.
+        drift = {"calm": 1.05, "standard": 1.08, "dynamic": 1.12}.get(movement, 1.05)
+        plan["camera"] = [
+            {"t": 0.00, "cx": 0.5, "cy": 0.5, "zoom": 1.0},
+            {"t": 0.12, "cx": 0.5, "cy": 0.5, "zoom": 1.0},
+            {"t": 0.88, "cx": 0.5, "cy": 0.5, "zoom": drift},
+            {"t": 1.00, "cx": 0.5, "cy": 0.5, "zoom": drift},
+        ]
+        plan["movement"] = movement
+        plan["is_tour"] = True
+    else:
+        # Camera follows the ACTION CHAIN, not just the bbox: establish on the
+        # page -> one eased key per recorded focus/click (typing, buttons across
+        # states) -> settle on the whole element for the result.
+        el_c = {"x": ecx, "y": ecy}
+        focuses = list(trace.get("focuses") or [])
+        if not focuses:
+            # legacy traces: fall back to input/button points
+            if trace.get("input_xy"):
+                focuses.append({"t": dur * 0.30, **trace["input_xy"]})
+            if trace.get("button_xy"):
+                focuses.append({"t": dur * 0.50, **trace["button_xy"]})
+        mids = []
+        for fc in focuses:
+            t = (float(fc.get("t", 0)) - trim) / dur
+            if 0.03 <= t < 0.78:
+                mids.append({"t": t, "x": float(fc["x"]), "y": float(fc["y"])})
+        mids.sort(key=lambda m: m["t"])
+        if len(mids) > 4:  # spread cap: evenly subsample, keep first+last
+            idx = [round(i * (len(mids) - 1) / 3) for i in range(4)]
+            mids = [mids[i] for i in dict.fromkeys(idx)]
+        keys = []
+        for m in mids:
+            if not keys or m["t"] - keys[-1]["t"] >= 0.05:
+                keys.append(m)
+        push = min(plan["camera"][1]["zoom"], MOVEMENT_MAX_ZOOM.get(movement, 1.35))
+        plan["camera"] = _cap_zoom(
+            [{"t": 0.00, "cx": 0.5, "cy": 0.5, "zoom": 1.0}]
+            + [{"t": m["t"], "cx": m["x"], "cy": m["y"], "zoom": push} for m in keys]
+            + [{"t": 0.86, "cx": ecx, "cy": ecy, "zoom": push},
+               {"t": 0.94, "cx": 0.5, "cy": 0.5, "zoom": 1.0},
+               {"t": 1.00, "cx": 0.5, "cy": 0.5, "zoom": 1.0}],
+            movement,
+        )
+        plan["movement"] = movement
+        plan["is_tour"] = False
 
     # Cursor: real traced path, shifted by trim, normalized to output duration.
     pts = []
@@ -105,6 +137,19 @@ def _plan_from_trace(trace: dict, aspect: str | None, style: str | None,
         {"t": float(c.get("t", 0)) - trim, "x": float(c.get("x", 0.5)), "y": float(c.get("y", 0.5))}
         for c in (trace.get("clicks") or ([click] if click else []))
     ]
+    # Tour captions, shifted by trim into output seconds.
+    caps = []
+    for c in (trace.get("captions") or []):
+        try:
+            t0, t1 = float(c.get("t0", 0)) - trim, float(c.get("t1", 0)) - trim
+        except (TypeError, ValueError):
+            continue
+        if t1 <= 0.1 or t0 >= dur - 0.1:
+            continue
+        caps.append({"t0": max(t0, 0.1), "t1": min(t1, dur - 0.1),
+                     "text": str(c.get("text", ""))[:70]})
+    plan["captions"] = caps
+    plan["title"] = trace.get("title") or plan.get("title", "")
     plan["element_center"] = {"x": ecx, "y": ecy}
     plan["trim_start"] = trim
     return plan
@@ -123,9 +168,13 @@ def _probe_src_fps(video: str) -> float:
         return 25.0
 
 
-def _backdrop(W: int, H: int, style: str) -> Image.Image:
-    """Static 3-stop diagonal gradient canvas (rendered once per clip)."""
-    c0, c1, c2 = config.BACKDROPS.get(style, config.BACKDROPS["saas"])
+def _backdrop(W: int, H: int, style: str, bg: str | None = None) -> Image.Image:
+    """Static 3-stop diagonal gradient canvas (rendered once per clip).
+
+    bg overrides the style preset: BACKDROPS name, custom "#a,#b[,#c]"
+    gradient, or "solid:#hex" (see config.resolve_bg).
+    """
+    c0, c1, c2 = config.resolve_bg(bg, style)
     tw, th = 48, 27
     tiny = Image.new("RGB", (tw, th))
     px = tiny.load()
@@ -142,18 +191,52 @@ def _backdrop(W: int, H: int, style: str) -> Image.Image:
     return tiny.resize((W, H), Image.BILINEAR)
 
 
+def _draw_caption(d: ImageDraw.ImageDraw, W: int, H: int, text: str, alpha: float):
+    """Bottom-center section title, constant size regardless of camera zoom."""
+    from PIL import ImageFont
+    if not text or alpha <= 0:
+        return
+    try:
+        font = ImageFont.truetype(config.FONT_BOLD, max(12, int(H * 0.024)))
+    except Exception:
+        font = ImageFont.load_default()
+    label = text[:56]
+    try:
+        bb = font.getbbox(label)
+        tw = bb[2] - bb[0]
+    except Exception:
+        tw = len(label) * 10
+    pw_, ph_ = tw + int(W * 0.04), int(H * 0.058)
+    px0 = W // 2 - pw_ // 2
+    py0 = int(H * 0.895) - ph_ // 2
+    a = max(0.0, min(1.0, alpha))
+    _pill = max(2, ph_ // 2)
+    d.rounded_rectangle([px0, py0, px0 + pw_, py0 + ph_], radius=_pill,
+                        fill=(10, 10, 14, int(165 * a)))
+    d.rounded_rectangle([px0, py0, px0 + pw_, py0 + ph_], radius=_pill,
+                        outline=(255, 255, 255, int(70 * a)), width=1)
+    try:
+        tb = font.getbbox(label)
+        d.text((px0 + (pw_ - tw) // 2, py0 + ph_ // 2 - (tb[3] + tb[1]) // 2),
+               label, font=font, fill=(255, 255, 255, int(235 * a)))
+    except Exception:
+        pass
+
+
 def polish(trace_path: Path, out_path: Path, aspect: str | None = None,
            style: str | None = None, duration: float | None = None,
-           fps: int = 60, crf: int = 18, quality: str | None = None) -> Path:
+           fps: int = 60, crf: int = 18, quality: str | None = None,
+           movement: str | None = None, captions: bool = True,
+           size: str | None = None, bg: str | None = None) -> Path:
     trace = _load_trace(trace_path)
     video = trace.get("video")
     if not video or not Path(video).exists():
         raise RuntimeError(f"[polish] raw video missing: {video} — re-run agent.record()")
-    plan = _plan_from_trace(trace, aspect, style, duration)
+    plan = _plan_from_trace(trace, aspect, style, duration, movement=movement)
     dur = plan["duration"]
     n = int(round(dur * fps))
 
-    W, H = config.canvas(plan["aspect"], quality)
+    W, H = config.canvas(plan["aspect"], quality, size)
     vw, vh = trace["viewport"]["w"], trace["viewport"]["h"]
     src_fps = _probe_src_fps(video)
 
@@ -195,7 +278,7 @@ def polish(trace_path: Path, out_path: Path, aspect: str | None = None,
         stdin=subprocess.PIPE)
 
     from PIL import Image as _I
-    bg = _backdrop(W, H, plan["style"]).convert("RGBA")
+    bg_img = _backdrop(W, H, plan["style"], bg).convert("RGBA")
     padX, padY = int(W * config.WINDOW_PAD_X_FRAC), int(H * config.WINDOW_PAD_Y_FRAC)
     s0 = min((W - 2 * padX) / vw, (H - 2 * padY) / vh)
     rad = max(8, int(config.WINDOW_RADIUS * W / 1280))
@@ -228,7 +311,7 @@ def polish(trace_path: Path, out_path: Path, aspect: str | None = None,
         ImageDraw.Draw(mask).rounded_rectangle([0, 0, sw, sh], radius=rad, fill=255)
         ox, oy = W / 2 - cam["cx"] * vw * s, H / 2 - cam["cy"] * vh * s
 
-        canvas = bg.copy()
+        canvas = bg_img.copy()
         shade = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         shd = ImageDraw.Draw(shade)
         for dy, al in ((30, 46), (16, 66), (7, 88)):
@@ -241,13 +324,25 @@ def polish(trace_path: Path, out_path: Path, aspect: str | None = None,
                             outline=(255, 255, 255, 110), width=max(2, int(W * 0.002)))
 
         # Cursor in canvas space (constant size, like the reference).
-        px_, py_ = ox + cur["x"] * vw * s, oy + cur["y"] * vh * s
-        if -60 <= px_ <= W + 60 and -60 <= py_ <= H + 60:
-            cfx = 0.0
-            for ck in plan.get("clicks", []):
-                if abs(t - ck["t"]) < 0.30:
-                    cfx = max(cfx, 1 - abs(t - ck["t"]) / 0.30)
-            _draw_cursor(d, int(px_), int(py_), max(14, int(config.CURSOR_SIZE * W / 1280)), cfx)
+        # Tours park the cursor: a visible arrow chasing a scroll is noise.
+        if not plan.get("is_tour"):
+            px_, py_ = ox + cur["x"] * vw * s, oy + cur["y"] * vh * s
+            if -60 <= px_ <= W + 60 and -60 <= py_ <= H + 60:
+                cfx = 0.0
+                for ck in plan.get("clicks", []):
+                    if abs(t - ck["t"]) < 0.30:
+                        cfx = max(cfx, 1 - abs(t - ck["t"]) / 0.30)
+                _draw_cursor(d, int(px_), int(py_), max(14, int(config.CURSOR_SIZE * W / 1280)), cfx)
+
+        if captions:
+            for cap in plan.get("captions", []):
+                fade = 0.35
+                a_in = max(0.0, min(1.0, (t - cap["t0"]) / fade))
+                a_out = max(0.0, min(1.0, (cap["t1"] - t) / fade))
+                a = min(a_in, a_out)
+                if a > 0:
+                    _draw_caption(d, W, H, cap["text"], a)
+                    break
 
         enc.stdin.write(canvas.convert("RGB").tobytes())
 

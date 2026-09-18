@@ -2857,6 +2857,1210 @@ def _draw_clep_lockup(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: di
         draw.text((cx - twu//2, py0+int(S["h"]*0.008)), url, font=f_u, fill=(*style["muted"][:3], ua))
 
 
+# ── Clep launch video (Sep 2026 brief) ───────────────────────────────────
+# Editorial, minimal, off-white #F3F3F1, ink #111714, lime #B8FF19,
+# green #4D8A18, gray #5D6662. Physical motion: easeOutCubic /
+# easeInOutCubic / spring overshoot, 300-500ms UI, 600-900ms hero type.
+
+def _launch_shadow(draw: ImageDraw.ImageDraw, rect, radius: int, alpha: int, S: dict, dy_frac: float = 0.008):
+    x0, y0, x1, y1 = rect
+    dy = int(S["h"] * dy_frac)
+    _rounded_rect(draw, (x0, y0 + dy, x1, y1 + dy), radius=radius,
+                  fill=(17, 23, 20, int(alpha * 0.10)), outline=None)
+
+def _launch_cursor(draw: ImageDraw.ImageDraw, x: int, y: int, s: int, alpha: int):
+    # classic arrow cursor, s = height in px
+    k = s / 24.0
+    pts = [(x + 5 * k, y + 3 * k), (x + 19 * k, y + 10 * k),
+           (x + 12.5 * k, y + 11.5 * k), (x + 9 * k, y + 18 * k)]
+    draw.polygon(pts, fill=(17, 23, 20, alpha), outline=(255, 255, 255, alpha))
+
+def _launch_ripple(draw: ImageDraw.ImageDraw, cx: int, cy: int, r: int, alpha: int, S: dict):
+    if alpha <= 0 or r <= 0:
+        return
+    w = max(2, S["stroke"] // 2)
+    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=None,
+                 outline=(77, 138, 24, alpha), width=w)
+
+def _launch_rich_line(draw: ImageDraw.ImageDraw, segs: list, cx: int, y_top: int,
+                      p: float, S: dict, stagger: float = 0.07, dur: float = 0.34,
+                      lift_frac: float = 0.016):
+    """Word-by-word upward reveal + blur->sharp (ghost pass) for mixed
+    color/font segments. segs = [(word, rgb, font)]. Returns total width."""
+    if not segs:
+        return 0
+    space_w = max(_text_bbox(" ", f)[0] for _, _, f in segs)
+    widths = [_text_bbox(w, f)[0] for w, _, f in segs]
+    total = sum(widths) + space_w * (len(segs) - 1)
+    x = cx - total // 2
+    for i, (w, col, f) in enumerate(segs):
+        wp = _clamp01((p - i * stagger) / dur)
+        if wp <= 0:
+            x += widths[i] + space_w
+            continue
+        e = _ease_out_cubic(wp)
+        a = int(255 * e)
+        yoff = int((1 - e) * S["h"] * lift_frac)
+        if e < 1.0:  # blurred ghost trailing below while landing
+            draw.text((x, y_top + yoff + int(S["h"] * 0.004)), w, font=f,
+                      fill=(*col[:3], int(70 * e)))
+        draw.text((x, y_top + yoff), w, font=f, fill=(*col[:3], a))
+        x += widths[i] + space_w
+    return total
+
+def _launch_segs(text_words: list[str], color, font, accents: dict | None = None):
+    """Split plain words, applying accent (color, font) overrides."""
+    out = []
+    for w in text_words:
+        key = w.strip(".,!?—")
+        if accents and key in accents:
+            out.append((w, *accents[key]))
+        else:
+            out.append((w, color, font))
+    return out
+
+def _draw_launch_hook(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 0.0-2.5s: "You built it." then "Now show it." (show it = italic green)
+    ink, green = style["fg"], style["accent2"]
+    f_serif = _font(config.MGFX_FONT_SERIF, max(40, int(S["h"] * 0.078)))
+    f_ital = _font(config.MGFX_FONT_SERIF_ITALIC, max(40, int(S["h"] * 0.078)))
+    lh = int(S["h"] * 0.105)
+    cx, cy = S["w"] // 2, S["h"] // 2
+    y1 = cy - lh + int(S["h"] * 0.008)
+    y2 = cy + int(S["h"] * 0.012)
+    _launch_rich_line(draw, [(w, ink, f_serif) for w in "You built it.".split()],
+                      cx, y1, _clamp01(p / 0.42), S, stagger=0.075, dur=0.36)
+    segs2 = [("Now", ink, f_serif), ("show", green, f_ital), ("it.", green, f_ital)]
+    _launch_rich_line(draw, segs2, cx, y2, _clamp01((p - 0.48) / 0.52), S,
+                      stagger=0.09, dur=0.36)
+
+def _draw_launch_code(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 2.5-5.5s: hook type drifts up, code card slides in, lime highlight on
+    # data-clip attr, subtext "Your code already knows the feature."
+    ink, green, lime = style["fg"], style["accent2"], style["accent"]
+    gray, border = style["muted"], style["card_border"]
+    cx, cy = S["w"] // 2, S["h"] // 2
+    # hook residue drifting upward + fading (first 30%)
+    if p < 0.38:
+        rp = _clamp01(p / 0.38)
+        f_mini = _font(config.MGFX_FONT_SERIF, max(20, int(S["h"] * 0.034)))
+        t = "Now show it."
+        tw, _ = _text_bbox(t, f_mini)
+        a = int(255 * (1 - rp))
+        if a > 0:
+            draw.text((cx - tw // 2, int(S["h"] * 0.16) - int(rp * S["h"] * 0.06)),
+                      t, font=f_mini, fill=(*gray[:3], a))
+    # code card slides up from bottom
+    e = _ease_out_cubic(_clamp01(p / 0.34))
+    if e <= 0:
+        return
+    a = int(255 * e)
+    cw, ch = int(S["w"] * 0.52), int(S["h"] * 0.34)
+    x0 = cx - cw // 2
+    y0 = cy - ch // 2 + int(S["h"] * 0.02) + int((1 - e) * S["h"] * 0.14)
+    x1, y1 = x0 + cw, y0 + ch
+    _launch_shadow(draw, (x0, y0, x1, y1), int(S["h"] * 0.014), a, S)
+    _rounded_rect(draw, (x0, y0, x1, y1), radius=int(S["h"] * 0.014),
+                  fill=(255, 255, 255, a),
+                  outline=(*border[:3], int(200 * a / 255)), width=max(1, S["stroke"] // 2))
+    # header dots + filename
+    dot_r = int(S["h"] * 0.007)
+    sy = y0 + int(S["h"] * 0.030)
+    sx = x0 + int(S["w"] * 0.018)
+    for i, col in enumerate([(217, 220, 216), (217, 220, 216), (184, 255, 25)]):
+        dx = sx + i * (dot_r * 2 + int(S["w"] * 0.006))
+        draw.ellipse((dx - dot_r, sy - dot_r, dx + dot_r, sy + dot_r), fill=(*col, a))
+    f_fn = _font(config.MGFX_FONT_REGULAR, max(12, int(S["h"] * 0.016)))
+    draw.text((sx + int(S["w"] * 0.045), sy - f_fn.getbbox("Ag")[3] // 2),
+              "FeatureCard.tsx", font=f_fn, fill=(*gray[:3], int(200 * a / 255)))
+    # code lines
+    f_code = _font(config.MGFX_FONT_REGULAR, max(14, int(S["h"] * 0.024)))
+    f_bold = _font(config.MGFX_FONT_BOLD, max(14, int(S["h"] * 0.024)))
+    tx = x0 + int(S["w"] * 0.030)
+    ty = y0 + int(S["h"] * 0.075)
+    lh = int(S["h"] * 0.048)
+    pre, attr, post = '<div ', 'data-clip="ai-research"', '>'
+    # lime highlight sweep behind attr (p 0.38-0.62)
+    hp = _ease_out_cubic(_clamp01((p - 0.38) / 0.24))
+    pre_w, _ = _text_bbox(pre, f_code)
+    attr_w, attr_h = _text_bbox(attr, f_bold)
+    if hp > 0:
+        pad = int(S["h"] * 0.006)
+        hx0 = tx + pre_w - pad
+        hx1 = hx0 + int((attr_w + pad * 2) * hp)
+        hy0 = ty - pad // 2
+        hy1 = ty + attr_h + pad
+        _rounded_rect(draw, (hx0, hy0, hx1, hy1), radius=int(S["h"] * 0.006),
+                      fill=(*lime[:3], int(255 * a / 255)), outline=None)
+    if p > 0.12:
+        la = int(255 * _clamp01((p - 0.12) / 0.2) * a / 255)
+        draw.text((tx, ty), pre, font=f_code, fill=(*gray[:3], la))
+        draw.text((tx + pre_w, ty), attr, font=f_bold, fill=(17, 23, 20, la))
+        tw_full, _ = _text_bbox(pre + attr, f_code)
+        draw.text((tx + pre_w + attr_w, ty), post, font=f_code, fill=(*gray[:3], la))
+    if p > 0.24:
+        la2 = int(255 * _clamp01((p - 0.24) / 0.2) * a / 255)
+        draw.text((tx, ty + lh), "  <Research />", font=f_code, fill=(*ink[:3], la2))
+    if p > 0.32:
+        la3 = int(255 * _clamp01((p - 0.32) / 0.2) * a / 255)
+        draw.text((tx, ty + lh * 2), "</div>", font=f_code, fill=(*gray[:3], la3))
+    # subtext
+    if p > 0.60:
+        sp = _clamp01((p - 0.60) / 0.40)
+        f_sub = _font(config.MGFX_FONT_BOLD, max(16, int(S["h"] * 0.030)))
+        f_sub_i = _font(config.MGFX_FONT_SERIF_ITALIC, max(16, int(S["h"] * 0.030)))
+        segs = _launch_segs("Your code already knows the feature.".split(), ink, f_sub,
+                            {"feature": (green, f_sub_i)})
+        _launch_rich_line(draw, segs, cx, y1 + int(S["h"] * 0.045), sp, S,
+                          stagger=0.06, dur=0.30)
+
+def _draw_launch_browser(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 5.5-8.0s: code -> browser window, cursor clicks lime Research button
+    ink, lime, gray, border = style["fg"], style["accent"], style["muted"], style["card_border"]
+    cx, cy = S["w"] // 2, S["h"] // 2
+    e = _ease_out_cubic(_clamp01(p / 0.30))
+    if e <= 0:
+        return
+    a = int(255 * e)
+    sc = 0.90 + 0.10 * e
+    cw, ch = int(S["w"] * 0.46 * sc), int(S["h"] * 0.60 * sc)
+    x0, y0 = cx - cw // 2, cy - ch // 2
+    x1, y1 = x0 + cw, y0 + ch
+    _launch_shadow(draw, (x0, y0, x1, y1), int(S["h"] * 0.014), a, S)
+    _rounded_rect(draw, (x0, y0, x1, y1), radius=int(S["h"] * 0.014),
+                  fill=(255, 255, 255, a),
+                  outline=(*border[:3], int(200 * a / 255)), width=max(1, S["stroke"] // 2))
+    # chrome bar
+    bar_h = int(ch * 0.11)
+    _rounded_rect(draw, (x0, y0, x1, y0 + bar_h), radius=int(S["h"] * 0.014),
+                  fill=(235, 235, 232, a), outline=None)
+    draw.rectangle((x0, y0 + bar_h // 2, x1, y0 + bar_h), fill=(235, 235, 232, a))
+    dot_r = int(S["h"] * 0.006)
+    for i in range(3):
+        dx = x0 + int(S["w"] * 0.016) + i * (dot_r * 2 + int(S["w"] * 0.005))
+        draw.ellipse((dx - dot_r, y0 + bar_h // 2 - dot_r, dx + dot_r, y0 + bar_h // 2 + dot_r),
+                     fill=(217, 220, 216, a))
+    # title + subtitle
+    f_t = _font(config.MGFX_FONT_BOLD, max(20, int(S["h"] * 0.042)))
+    f_s = _font(config.MGFX_FONT_REGULAR, max(12, int(S["h"] * 0.021)))
+    t = "AI Research"
+    tw, _ = _text_bbox(t, f_t)
+    ty = y0 + bar_h + int(S["h"] * 0.045)
+    draw.text((cx - tw // 2, ty), t, font=f_t, fill=(*ink[:3], a))
+    s = "What do you want to research?"
+    sw, _ = _text_bbox(s, f_s)
+    draw.text((cx - sw // 2, ty + int(S["h"] * 0.075)), s, font=f_s, fill=(*gray[:3], a))
+    # input pill with typing (p 0.30-0.55)
+    iw, ih = int(cw * 0.72), int(S["h"] * 0.062)
+    ix0, iy0 = cx - iw // 2, ty + int(S["h"] * 0.135)
+    ix1, iy1 = ix0 + iw, iy0 + ih
+    _rounded_rect(draw, (ix0, iy0, ix1, iy1), radius=ih // 2,
+                  fill=(255, 255, 255, a),
+                  outline=(*border[:3], int(220 * a / 255)), width=max(1, S["stroke"] // 2))
+    query = "AI browser agents"
+    nch = int(len(query) * _ease_out_cubic(_clamp01((p - 0.30) / 0.25)) + 0.5)
+    f_q = _font(config.MGFX_FONT_REGULAR, max(13, int(S["h"] * 0.020)))
+    vis = query[:nch]
+    qx = ix0 + int(S["w"] * 0.018)
+    _, qh = _text_bbox("Ag", f_q)
+    qy = (iy0 + iy1) // 2 - qh // 2 - f_q.getbbox("Ag")[1] // 2
+    if vis:
+        draw.text((qx, qy), vis, font=f_q, fill=(*ink[:3], a))
+    if 0.30 < p < 0.55 and (int(p * 10) % 10) < 6 and nch < len(query):
+        vw, _ = _text_bbox(vis, f_q)
+        draw.line((qx + vw + int(S["w"] * 0.003), qy, qx + vw + int(S["w"] * 0.003), qy + qh),
+                  fill=(*ink[:3], a), width=max(2, S["stroke"] // 2))
+    # lime Research button with click punch
+    bw, bh = int(cw * 0.44), int(S["h"] * 0.062)
+    bx0, by0 = cx - bw // 2, iy1 + int(S["h"] * 0.030)
+    bx1, by1 = bx0 + bw, by0 + bh
+    punch = 0.0
+    if p > 0.76:
+        punch = 0.10 * math.exp(-(p - 0.76) * 14) * math.cos((p - 0.76) * 28)
+    bw2, bh2 = int(bw * (1 + punch)), int(bh * (1 + punch))
+    bx0, by0 = cx - bw2 // 2, (by0 + by1) // 2 - bh2 // 2
+    bx1, by1 = bx0 + bw2, by0 + bh2
+    _rounded_rect(draw, (bx0, by0, bx1, by1), radius=bh2 // 2,
+                  fill=(*lime[:3], a), outline=None)
+    f_b = _font(config.MGFX_FONT_BOLD, max(13, int(S["h"] * 0.020)))
+    bt = "Research"
+    btw, _ = _text_bbox(bt, f_b)
+    draw.text((cx - btw // 2, (by0 + by1) // 2 - f_b.getbbox(bt)[3] // 2), bt,
+              font=f_b, fill=(17, 23, 20, a))
+    # cursor flight (p 0.52-0.76) then ripple (0.76-1.0)
+    btn_cx, btn_cy = (bx0 + bx1) // 2, (by0 + by1) // 2
+    if 0.52 <= p <= 0.78:
+        cp = _ease_in_out_cubic(_clamp01((p - 0.52) / 0.24))
+        cur_x = int(_lerp(S["w"] * 0.80, btn_cx + bw * 0.12, cp))
+        cur_y = int(_lerp(S["h"] * 0.98, btn_cy + bh * 0.10, cp))
+        _launch_cursor(draw, cur_x, cur_y, int(S["h"] * 0.030), a)
+    elif p > 0.78:
+        _launch_cursor(draw, int(btn_cx + bw * 0.12), int(btn_cy + bh * 0.10),
+                       int(S["h"] * 0.030), a)
+    if p > 0.76:
+        rp = _clamp01((p - 0.76) / 0.24)
+        _launch_ripple(draw, btn_cx, btn_cy, int(S["h"] * (0.02 + 0.075 * _ease_out_cubic(rp))),
+                       int(200 * (1 - rp) * a / 255), S)
+        if rp < 0.6:
+            _launch_ripple(draw, btn_cx, btn_cy, int(S["h"] * (0.015 + 0.045 * _ease_out_cubic(rp / 0.6))),
+                           int(140 * (1 - rp / 0.6) * a / 255), S)
+
+def _draw_launch_camera(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 8.0-11.0s: browser becomes camera frame, smooth zoom into the button:
+    # RESEARCH -> LOADING -> RESULTS, kinetic labels around it.
+    ink, lime, green, gray = style["fg"], style["accent"], style["accent2"], style["muted"]
+    cx, cy = S["w"] // 2, S["h"] // 2 - int(S["h"] * 0.02)
+    e = _ease_out_cubic(_clamp01(p / 0.25))
+    if e <= 0:
+        return
+    a = int(255 * e)
+    # camera frame
+    fw, fh = int(S["w"] * 0.66), int(S["h"] * 0.62)
+    fx0, fy0 = cx - fw // 2, cy - fh // 2
+    fx1, fy1 = fx0 + fw, fy0 + fh
+    draw.rounded_rectangle((fx0, fy0, fx1, fy1), radius=int(S["h"] * 0.012),
+                           fill=None, outline=(*ink[:3], int(220 * a / 255)),
+                           width=max(2, S["stroke"] // 2))
+    # lime corner ticks
+    tick = int(S["h"] * 0.035)
+    cw_ = max(3, S["stroke"])
+    for (tx, ty, dx, dy) in ((fx0, fy0, 1, 1), (fx1, fy0, -1, 1),
+                             (fx0, fy1, 1, -1), (fx1, fy1, -1, -1)):
+        draw.line((tx, ty, tx + dx * tick, ty), fill=(*lime[:3], a), width=cw_)
+        draw.line((tx, ty, tx, ty + dy * tick), fill=(*lime[:3], a), width=cw_)
+    # smooth camera zoom on the button
+    zoom = 1.0 + 0.45 * _ease_in_out_cubic(_clamp01((p - 0.10) / 0.75))
+    stage = 0 if p < 0.38 else (1 if p < 0.68 else 2)
+    # stage crossfade helper
+    def stage_alpha(s, lo, hi):
+        return _clamp01((p - lo) / 0.06) * (1 - _clamp01((p - hi) / 0.06))
+    bw, bh = int(S["w"] * 0.30 * zoom), int(S["h"] * 0.085 * zoom)
+    bw = min(bw, int(fw * 0.86))
+    bx0, by0 = cx - bw // 2, cy - bh // 2
+    bx1, by1 = bx0 + bw, by0 + bh
+    f_b = _font(config.MGFX_FONT_BOLD, max(14, int(S["h"] * 0.022 * zoom)))
+    if stage == 0:
+        sa = int(a * (1 - _clamp01((p - 0.32) / 0.06)))
+        _rounded_rect(draw, (bx0, by0, bx1, by1), radius=bh // 2,
+                      fill=(*lime[:3], sa), outline=None)
+        t = "RESEARCH"
+        tw, _ = _text_bbox(t, f_b)
+        if tw < bw - 20:
+            draw.text((cx - tw // 2, (by0 + by1) // 2 - f_b.getbbox(t)[3] // 2), t,
+                      font=f_b, fill=(17, 23, 20, sa))
+        _launch_cursor(draw, bx1 - int(S["w"] * 0.02), by1 - int(S["h"] * 0.01),
+                       int(S["h"] * 0.028), sa)
+    elif stage == 1:
+        sa = int(a * stage_alpha(1, 0.38, 0.62))
+        _rounded_rect(draw, (bx0, by0, bx1, by1), radius=bh // 2,
+                      fill=(255, 255, 255, sa),
+                      outline=(*ink[:3], int(160 * sa / 255)), width=max(2, S["stroke"] // 2))
+        # spinner left + LOADING
+        sp_cx = bx0 + int(bh * 0.7)
+        sp_cy = (by0 + by1) // 2
+        sp_r = int(bh * 0.22)
+        for i in range(10):
+            ang = math.radians(i * 36 + p * 540)
+            dx = int(sp_r * math.cos(ang))
+            dy = int(sp_r * math.sin(ang))
+            ia = int(sa * (0.25 + 0.75 * i / 9))
+            draw.ellipse((sp_cx + dx - 3, sp_cy + dy - 3, sp_cx + dx + 3, sp_cy + dy + 3),
+                         fill=(*green[:3], ia))
+        t = "LOADING"
+        tw, _ = _text_bbox(t, f_b)
+        draw.text((sp_cx + int(bh * 0.55), sp_cy - f_b.getbbox(t)[3] // 2), t,
+                  font=f_b, fill=(*ink[:3], sa))
+    else:
+        sa = int(a * _clamp01((p - 0.68) / 0.08))
+        rw, rh = min(int(S["w"] * 0.40), int(fw * 0.88)), int(S["h"] * 0.30)
+        rx0, ry0 = cx - rw // 2, cy - rh // 2
+        rx1, ry1 = rx0 + rw, ry0 + rh
+        _launch_shadow(draw, (rx0, ry0, rx1, ry1), int(S["h"] * 0.010), sa, S)
+        _rounded_rect(draw, (rx0, ry0, rx1, ry1), radius=int(S["h"] * 0.010),
+                      fill=(255, 255, 255, sa),
+                      outline=(217, 220, 216, int(220 * sa / 255)), width=max(1, S["stroke"] // 2))
+        # header: check + RESULTS
+        cr = int(S["h"] * 0.016)
+        ccx = rx0 + int(S["w"] * 0.025) + cr
+        ccy = ry0 + int(S["h"] * 0.038)
+        draw.ellipse((ccx - cr, ccy - cr, ccx + cr, ccy + cr), fill=(*lime[:3], sa))
+        draw.line((ccx - cr // 2, ccy, ccx - 1, ccy + cr // 2), fill=(17, 23, 20, sa), width=3)
+        draw.line((ccx - 1, ccy + cr // 2, ccx + cr // 2 + 2, ccy - cr // 2), fill=(17, 23, 20, sa), width=3)
+        f_r = _font(config.MGFX_FONT_BOLD, max(13, int(S["h"] * 0.020)))
+        draw.text((ccx + cr + int(S["w"] * 0.010), ccy - f_r.getbbox("Ag")[3] // 2),
+                  "RESULTS", font=f_r, fill=(*ink[:3], sa))
+        for i in range(3):
+            lp = _clamp01((p - 0.74 - i * 0.06) / 0.18)
+            if lp <= 0:
+                continue
+            la = int(sa * _ease_out_cubic(lp))
+            ly = ry0 + int(S["h"] * 0.085) + i * int(S["h"] * 0.048)
+            lw = int(rw * (0.78 - i * 0.09))
+            _rounded_rect(draw, (rx0 + int(S["w"] * 0.025), ly,
+                                 rx0 + int(S["w"] * 0.025) + lw, ly + int(S["h"] * 0.020)),
+                          radius=int(S["h"] * 0.008), fill=(238, 240, 237, la), outline=None)
+    # kinetic labels (gray + lime dot)
+    f_l = _font(config.MGFX_FONT_BOLD, max(11, int(S["h"] * 0.016)))
+    labels = [("AUTO-ZOOM", fx0 + int(S["w"] * 0.01), fy0 - int(S["h"] * 0.048), 0.10),
+              ("CURSOR", fx1 + int(S["w"] * 0.012), cy - int(S["h"] * 0.02), 0.30),
+              ("MOTION", fx0 + int(S["w"] * 0.01), fy1 + int(S["h"] * 0.020), 0.50)]
+    for txt, lx, ly, t0 in labels:
+        lp = _ease_out_cubic(_clamp01((p - t0) / 0.22))
+        if lp <= 0:
+            continue
+        la = int(255 * lp * a / 255)
+        dx = lx + int((1 - lp) * S["w"] * 0.008)
+        dr = int(S["h"] * 0.006)
+        draw.ellipse((dx - dr, ly - dr, dx + dr, ly + dr), fill=(*lime[:3], la))
+        draw.text((dx + dr + int(S["w"] * 0.005), ly - f_l.getbbox(txt)[3] // 2), txt,
+                  font=f_l, fill=(*gray[:3], la))
+
+def _draw_launch_norecord(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 11.0-14.5s: results fill screen -> shrink to floating video card.
+    # "No recording." / "No editing." ("No" flashes green).
+    ink, lime, green, gray, border = (style["fg"], style["accent"], style["accent2"],
+                                      style["muted"], style["card_border"])
+    cx = S["w"] // 2
+    # card morph: fullscreen-ish -> floating video card
+    mp = _ease_in_out_cubic(_clamp01((p - 0.38) / 0.32))
+    fx, fy = S["w"] * 0.86, S["h"] * 0.80  # full
+    tx, ty = S["w"] * 0.52, S["h"] * 0.40  # floating
+    cw = int(_lerp(fx, tx, mp))
+    ch = int(_lerp(fy, ty, mp))
+    cy = int(_lerp(S["h"] * 0.46, S["h"] * 0.36, mp))
+    x0, y0 = cx - cw // 2, cy - ch // 2
+    x1, y1 = x0 + cw, y0 + ch
+    e = _ease_out_cubic(_clamp01(p / 0.18))
+    a = int(255 * e)
+    _launch_shadow(draw, (x0, y0, x1, y1), int(S["h"] * 0.014), a, S, dy_frac=0.012)
+    _rounded_rect(draw, (x0, y0, x1, y1), radius=int(S["h"] * 0.014),
+                  fill=(255, 255, 255, a),
+                  outline=(*border[:3], int(200 * a / 255)), width=max(1, S["stroke"] // 2))
+    # result rows (fade as card shrinks)
+    rows_a = int(a * (1 - mp))
+    if rows_a > 0:
+        # header: Results + source pill
+        f_h = _font(config.MGFX_FONT_BOLD, max(13, int(S["h"] * 0.020)))
+        draw.text((x0 + int(S["w"] * 0.03), y0 + int(S["h"] * 0.022)), "Results",
+                  font=f_h, fill=(*ink[:3], rows_a))
+        pill_t = "3 sources"
+        f_p = _font(config.MGFX_FONT_BOLD, max(10, int(S["h"] * 0.013)))
+        ptw, _ = _text_bbox(pill_t, f_p)
+        ph = int(S["h"] * 0.028)
+        ppx1 = x1 - int(S["w"] * 0.03)
+        ppx0 = ppx1 - ptw - int(S["w"] * 0.024)
+        ppy0 = y0 + int(S["h"] * 0.018)
+        _rounded_rect(draw, (ppx0, ppy0, ppx1, ppy0 + ph), radius=ph // 2,
+                      fill=(*lime[:3], rows_a), outline=None)
+        draw.text((ppx0 + int(S["w"] * 0.012), ppy0 + ph // 2 - f_p.getbbox(pill_t)[3] // 2),
+                  pill_t, font=f_p, fill=(17, 23, 20, rows_a))
+        rh = int(S["h"] * 0.105 * (ch / (S["h"] * 0.80)))
+        gap_r = int(S["h"] * 0.018)
+        for i in range(4):
+            rp = _clamp01((p - 0.06 - i * 0.07) / 0.22)
+            if rp <= 0:
+                continue
+            ra = int(rows_a * _ease_out_cubic(rp))
+            ry0 = y0 + int(S["h"] * 0.085) + i * (rh + gap_r)
+            ry1 = ry0 + rh
+            if ry1 > y1 - int(S["h"] * 0.075):
+                break
+            _rounded_rect(draw, (x0 + int(S["w"] * 0.03), ry0, x1 - int(S["w"] * 0.03), ry1),
+                          radius=int(S["h"] * 0.008), fill=(243, 243, 241, ra), outline=None)
+            cr = int(S["h"] * 0.011)
+            ccx = x0 + int(S["w"] * 0.055) + cr
+            ccy = (ry0 + ry1) // 2
+            draw.ellipse((ccx - cr, ccy - cr, ccx + cr, ccy + cr), fill=(*lime[:3], ra))
+            # two-line skeleton: title + sub
+            tx0 = ccx + cr + int(S["w"] * 0.012)
+            lw1 = int(cw * (0.52 - i * 0.05))
+            lw2 = int(cw * (0.34 - i * 0.03))
+            _rounded_rect(draw, (tx0, ccy - int(S["h"] * 0.016),
+                                 tx0 + lw1, ccy - int(S["h"] * 0.002)),
+                          radius=int(S["h"] * 0.005), fill=(120, 126, 122, ra), outline=None)
+            _rounded_rect(draw, (tx0, ccy + int(S["h"] * 0.004),
+                                 tx0 + lw2, ccy + int(S["h"] * 0.014)),
+                          radius=int(S["h"] * 0.005), fill=(200, 204, 200, ra), outline=None)
+        # footer assembling note (stage A only)
+        if mp < 0.5:
+            fa_ = int(rows_a * (1 - mp * 2) * _clamp01((p - 0.30) / 0.2))
+            if fa_ > 0:
+                f_f = _font(config.MGFX_FONT_REGULAR, max(11, int(S["h"] * 0.015)))
+                ft = "Clep is assembling your clip…"
+                ftw, _ = _text_bbox(ft, f_f)
+                draw.text((cx - ftw // 2, y1 - int(S["h"] * 0.048)), ft,
+                          font=f_f, fill=(*gray[:3], max(0, fa_)))
+    # floating video chrome: play + lime progress (fade in as morph completes)
+    if mp > 0.25:
+        va = int(a * _clamp01((mp - 0.25) / 0.4))
+        pr = int(S["h"] * 0.030)
+        pcx, pcy = cx, (y0 + y1) // 2 - int(S["h"] * 0.01)
+        draw.ellipse((pcx - pr, pcy - pr, pcx + pr, pcy + pr), fill=(17, 23, 20, va))
+        draw.polygon([(pcx - int(pr * 0.35), pcy - int(pr * 0.5)),
+                      (pcx - int(pr * 0.35), pcy + int(pr * 0.5)),
+                      (pcx + int(pr * 0.55), pcy)], fill=(255, 255, 255, va))
+        bar_pad = int(S["w"] * 0.03)
+        bar_y = y1 - int(S["h"] * 0.030)
+        draw.line((x0 + bar_pad, bar_y, x1 - bar_pad, bar_y),
+                  fill=(230, 232, 229, va), width=max(3, int(S["h"] * 0.006)))
+        prog = _clamp01((p - 0.62) / 0.30)
+        if prog > 0:
+            px1 = (x0 + bar_pad) + int((cw - bar_pad * 2) * prog)
+            draw.line((x0 + bar_pad, bar_y, px1, bar_y),
+                      fill=(*lime[:3], va), width=max(3, int(S["h"] * 0.006)))
+    # "No recording." / "No editing."
+    f_no = _font(config.MGFX_FONT_BOLD, max(20, int(S["h"] * 0.040)))
+    lines = [("No recording.", 0.56), ("No editing.", 0.72)]
+    for li, (txt, t0) in enumerate(lines):
+        lp = _clamp01((p - t0) / 0.20)
+        if lp <= 0:
+            continue
+        le = _ease_out_cubic(lp)
+        la = int(255 * le)
+        # "No" flashes green shortly after landing
+        flash = (t0 + 0.06) < p < (t0 + 0.26)
+        c_no = green if flash else ink
+        w_no, _ = _text_bbox("No ", f_no)
+        w_rest, _ = _text_bbox(txt[3:], f_no)
+        total = w_no + w_rest
+        sx = cx - total // 2
+        sy = y1 + int(S["h"] * 0.045) + li * int(S["h"] * 0.062) + int((1 - le) * S["h"] * 0.015)
+        draw.text((sx, sy), "No ", font=f_no, fill=(*c_no[:3], la))
+        draw.text((sx + w_no, sy), txt[3:], font=f_no, fill=(*ink[:3], la))
+
+def _draw_launch_cards(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 14.5-17.5s: PRODUCT VIDEO + WALKTHROUGH + UI MOCKUP fly in, merge.
+    ink, lime, gray, border = style["fg"], style["accent"], style["muted"], style["card_border"]
+    cx, cy = S["w"] // 2, S["h"] // 2 - int(S["h"] * 0.03)
+    cw, ch = int(S["w"] * 0.235), int(S["h"] * 0.34)
+    gap = int(S["w"] * 0.035)
+    total_w = 3 * cw + 2 * gap
+    start_x = cx - total_w // 2
+    base_y = cy - ch // 2
+    cards = [("PRODUCT VIDEO", "play"), ("WALKTHROUGH", "steps"), ("UI MOCKUP", "grid")]
+    # entry origins: left / right / bottom
+    origins = [(-cw - gap, 0), (S["w"] + gap, 0), (0, S["h"] * 0.5)]
+    mp = _ease_in_out_cubic(_clamp01((p - 0.62) / 0.30))  # merge
+    for idx, (label, kind) in enumerate(cards):
+        ep = _clamp01((p - idx * 0.10) / 0.34)
+        if ep <= 0:
+            continue
+        ee = _ease_out_back(ep) if ep < 0.9 else _ease_out_cubic(ep)
+        fa = int(255 * _clamp01(ep / 0.25) * (1 - mp))
+        if fa <= 0:
+            continue
+        home_x = start_x + idx * (cw + gap)
+        ox, oy = origins[idx]
+        x0 = int(_lerp(home_x + ox if idx < 2 else home_x, cx - cw // 2, mp) +
+                 (1 - ee) * (ox if idx == 2 else 0) * 0)
+        if idx == 0:
+            x0 = int(_lerp(home_x - (S["w"] * 0.3) * (1 - ee), cx - cw // 2, mp))
+        elif idx == 1:
+            x0 = int(_lerp(home_x + (S["w"] * 0.3) * (1 - ee), cx - cw // 2, mp))
+        else:
+            x0 = home_x
+        y0 = int(_lerp(base_y + (S["h"] * 0.5) * (1 - ee) if idx == 2 else base_y,
+                       base_y, mp))
+        x1, y1 = x0 + cw, y0 + ch
+        _launch_shadow(draw, (x0, y0, x1, y1), int(S["h"] * 0.010), fa, S)
+        _rounded_rect(draw, (x0, y0, x1, y1), radius=int(S["h"] * 0.010),
+                      fill=(255, 255, 255, fa),
+                      outline=(*border[:3], int(200 * fa / 255)), width=max(1, S["stroke"] // 2))
+        # lime tag
+        f_tag = _font(config.MGFX_FONT_BOLD, max(10, int(S["h"] * 0.014)))
+        tag = ("VIDEO", "GUIDE", "MOCKUP")[idx]
+        tgw, _ = _text_bbox(tag, f_tag)
+        tpad = int(S["w"] * 0.008)
+        tgh = int(S["h"] * 0.026)
+        tgx0 = (x0 + x1) // 2 - (tgw + tpad * 2) // 2
+        tgy0 = y0 + int(S["h"] * 0.022)
+        _rounded_rect(draw, (tgx0, tgy0, tgx0 + tgw + tpad * 2, tgy0 + tgh),
+                      radius=tgh // 2, fill=(*lime[:3], fa), outline=None)
+        draw.text((tgx0 + tpad, tgy0 + tgh // 2 - f_tag.getbbox(tag)[3] // 2), tag,
+                  font=f_tag, fill=(17, 23, 20, fa))
+        # mock visual
+        if kind == "play":
+            pr = int(S["h"] * 0.030)
+            pcx, pcy = (x0 + x1) // 2, y0 + int(ch * 0.52)
+            draw.ellipse((pcx - pr, pcy - pr, pcx + pr, pcy + pr),
+                         fill=(17, 23, 20, fa))
+            draw.polygon([(pcx - int(pr * 0.35), pcy - int(pr * 0.5)),
+                          (pcx - int(pr * 0.35), pcy + int(pr * 0.5)),
+                          (pcx + int(pr * 0.55), pcy)], fill=(255, 255, 255, fa))
+        elif kind == "steps":
+            for li in range(3):
+                ly = y0 + int(ch * 0.42) + li * int(S["h"] * 0.030)
+                lw = int(cw * (0.62 - li * 0.08))
+                _rounded_rect(draw, ((x0 + x1) // 2 - lw // 2, ly,
+                                     (x0 + x1) // 2 + lw // 2, ly + int(S["h"] * 0.012)),
+                              radius=int(S["h"] * 0.005), fill=(225, 228, 224, fa), outline=None)
+        else:
+            gx, gy = x0 + int(cw * 0.22), y0 + int(ch * 0.40)
+            cell = int(cw * 0.18)
+            for r in range(2):
+                for c in range(3):
+                    _rounded_rect(draw, (gx + c * (cell + 6), gy + r * (cell // 2 + 6),
+                                         gx + c * (cell + 6) + cell, gy + r * (cell // 2 + 6) + cell // 2),
+                                  radius=4, fill=(225, 228, 224, fa) if (r, c) != (0, 0) else (*lime[:3], fa),
+                                  outline=None)
+        # label
+        f_lb = _font(config.MGFX_FONT_BOLD, max(12, int(S["h"] * 0.019)))
+        lw_, _ = _text_bbox(label, f_lb)
+        if lw_ > cw - int(S["w"] * 0.02):
+            f_lb = _font(config.MGFX_FONT_BOLD, max(10, int(S["h"] * 0.016)))
+            lw_, _ = _text_bbox(label, f_lb)
+        draw.text(((x0 + x1) // 2 - lw_ // 2, y1 - int(S["h"] * 0.045)), label,
+                  font=f_lb, fill=(*ink[:3], fa))
+    # "+" separators
+    if 0.42 < p < 0.66:
+        pa = int(255 * _clamp01((p - 0.42) / 0.1) * (1 - _clamp01((p - 0.58) / 0.08)))
+        f_p = _font(config.MGFX_FONT_BOLD, max(16, int(S["h"] * 0.026)))
+        for i in range(2):
+            px = start_x + (i + 1) * cw + i * gap + gap // 2
+            tw, _ = _text_bbox("+", f_p)
+            draw.text((px - tw // 2, base_y + ch // 2 - f_p.getbbox("+")[3] // 2), "+",
+                      font=f_p, fill=(*gray[:3], pa))
+    # merged large frame
+    if mp > 0:
+        ma = int(255 * mp)
+        mw, mh = int(S["w"] * 0.58), int(S["h"] * 0.44)
+        mx0, my0 = cx - mw // 2, cy - mh // 2
+        mx1, my1 = mx0 + mw, my0 + mh
+        _launch_shadow(draw, (mx0, my0, mx1, my1), int(S["h"] * 0.014), ma, S, dy_frac=0.012)
+        _rounded_rect(draw, (mx0, my0, mx1, my1), radius=int(S["h"] * 0.014),
+                      fill=(255, 255, 255, ma),
+                      outline=(*border[:3], int(220 * ma / 255)), width=max(1, S["stroke"] // 2))
+        # fake timeline rows inside
+        for i in range(3):
+            ly = my0 + int(S["h"] * 0.05) + i * int(S["h"] * 0.045)
+            lw = int(mw * (0.7 - i * 0.1))
+            _rounded_rect(draw, (mx0 + int(S["w"] * 0.03), ly,
+                                 mx0 + int(S["w"] * 0.03) + lw, ly + int(S["h"] * 0.018)),
+                          radius=int(S["h"] * 0.007), fill=(238, 240, 237, ma), outline=None)
+        pr = int(S["h"] * 0.034)
+        draw.ellipse((cx - pr, cy - pr + int(S["h"] * 0.03), cx + pr, cy + pr + int(S["h"] * 0.03)),
+                     fill=(17, 23, 20, ma))
+        pcy = cy + int(S["h"] * 0.03)
+        draw.polygon([(cx - int(pr * 0.35), pcy - int(pr * 0.5)),
+                      (cx - int(pr * 0.35), pcy + int(pr * 0.5)),
+                      (cx + int(pr * 0.55), pcy)], fill=(255, 255, 255, ma))
+        bar_y = my1 - int(S["h"] * 0.032)
+        draw.line((mx0 + int(S["w"] * 0.03), bar_y, mx1 - int(S["w"] * 0.03), bar_y),
+                  fill=(*lime[:3], ma), width=max(3, int(S["h"] * 0.007)))
+
+def _draw_launch_lockup(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 17.5-20.5s: "clep" + "Turn your product into video." + pulsing lime dot
+    ink, lime, green = style["fg"], style["accent"], style["accent2"]
+    cx, cy = S["w"] // 2, S["h"] // 2 - int(S["h"] * 0.02)
+    logo = "clep"
+    f_logo = _font(config.MGFX_FONT_BLACK, max(60, int(S["h"] * 0.125)))
+    widths = [_text_bbox(ch, f_logo)[0] for ch in logo]
+    space = int(S["w"] * 0.002)
+    total = sum(widths) + space * (len(logo) - 1)
+    x = cx - total // 2
+    ly = cy - int(S["h"] * 0.13)
+    for i, ch in enumerate(logo):
+        cp = _clamp01((p - i * 0.06) / 0.32)
+        if cp <= 0:
+            x += widths[i] + space
+            continue
+        ce = _ease_out_back(cp) if cp < 0.9 else _ease_out_cubic(cp)
+        ca = int(255 * _clamp01(cp / 0.3))
+        draw.text((x, ly + int((1 - ce) * S["h"] * 0.03)), ch, font=f_logo,
+                  fill=(*ink[:3], ca))
+        x += widths[i] + space
+    if p > 0.34:
+        sp = _clamp01((p - 0.34) / 0.5)
+        f_t = _font(config.MGFX_FONT_REGULAR, max(18, int(S["h"] * 0.036)))
+        f_ti = _font(config.MGFX_FONT_SERIF_ITALIC, max(18, int(S["h"] * 0.036)))
+        segs = [("Turn", ink, f_t), ("your", ink, f_t), ("product", green, f_ti),
+                ("into", ink, f_t), ("video.", ink, f_t)]
+        tw = _launch_rich_line(draw, segs, cx - int(S["h"] * 0.012),
+                               cy + int(S["h"] * 0.045), sp, S,
+                               stagger=0.07, dur=0.30)
+        # pulsing lime dot beside the line
+        pulse = 1.0 + 0.22 * math.sin(p * 9)
+        dr = int(max(4, S["h"] * 0.009 * pulse))
+        dot_x = cx + tw // 2 + int(S["w"] * 0.012)
+        dot_y = int(cy + S["h"] * 0.045 + S["h"] * 0.018)
+        halo = int(40 * (0.5 + 0.5 * math.sin(p * 9)))
+        draw.ellipse((dot_x - dr * 2, dot_y - dr * 2, dot_x + dr * 2, dot_y + dr * 2),
+                     fill=(*lime[:3], halo))
+        draw.ellipse((dot_x - dr, dot_y - dr, dot_x + dr, dot_y + dr),
+                     fill=(*lime[:3], int(255 * _clamp01(sp / 0.3))))
+
+def _draw_launch_cta(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 20.5-22s: "clep.dev" small on off-white
+    ink, lime, gray = style["fg"], style["accent"], style["muted"]
+    cx, cy = S["w"] // 2, S["h"] // 2
+    e = _ease_out_cubic(_clamp01(p / 0.45))
+    if e <= 0:
+        return
+    a = int(255 * e)
+    dr = int(S["h"] * 0.007 * (1.0 + 0.18 * math.sin(p * 8)))
+    draw.ellipse((cx - dr, cy - int(S["h"] * 0.055) - dr, cx + dr, cy - int(S["h"] * 0.055) + dr),
+                 fill=(*lime[:3], a))
+    f_c = _font(config.MGFX_FONT_REGULAR, max(16, int(S["h"] * 0.034)))
+    t = "clep.dev"
+    tw, _ = _text_bbox(t, f_c)
+    draw.text((cx - tw // 2, cy - int(S["h"] * 0.015) + int((1 - e) * S["h"] * 0.015)),
+              t, font=f_c, fill=(*ink[:3], a))
+
+
+# ── Clep narrative cut (20s silent brief) ─────────────────────────────────
+# Beats: problem -> tag -> drive -> ship -> endcard. Narrative captions sit
+# at the bottom; the scene plays above them. Same launch palette.
+
+_LAUNCH_RED = (225, 60, 50)
+
+def _launch_caption(draw: ImageDraw.ImageDraw, lines: list, cx: int, y_top: int,
+                    p: float, S: dict, t0: float = 0.06, fs_frac: float = 0.027):
+    f_b = _font(config.MGFX_FONT_BOLD, max(14, int(S["h"] * fs_frac)))
+    f_r = _font(config.MGFX_FONT_REGULAR, max(14, int(S["h"] * fs_frac)))
+    lh = int(S["h"] * (fs_frac + 0.014))
+    for i, txt in enumerate(lines):
+        lp = _clamp01((p - t0 - i * 0.14) / 0.24)
+        if lp <= 0:
+            continue
+        le = _ease_out_cubic(lp)
+        la = int(255 * le)
+        f = f_b if i == 0 else f_r
+        col = (17, 23, 20) if i == 0 else (93, 102, 98)
+        tw, _ = _text_bbox(txt, f)
+        if tw > S["w"] * 0.88:
+            # shrink to fit
+            f2 = _font(config.MGFX_FONT_BOLD if i == 0 else config.MGFX_FONT_REGULAR,
+                       max(12, int(S["h"] * (fs_frac - 0.004))))
+            tw, _ = _text_bbox(txt, f2)
+            f = f2
+        draw.text((cx - tw // 2, y_top + i * lh + int((1 - le) * S["h"] * 0.012)),
+                  txt, font=f, fill=(*col, la))
+
+def _launch_redx(draw: ImageDraw.ImageDraw, cx: int, cy: int, r: int, alpha: int):
+    if alpha <= 0:
+        return
+    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 255, 255, alpha),
+                 outline=(*_LAUNCH_RED, alpha), width=max(3, r // 4))
+    o = int(r * 0.45)
+    draw.line((cx - o, cy - o, cx + o, cy + o), fill=(*_LAUNCH_RED, alpha), width=max(3, r // 4))
+    draw.line((cx - o, cy + o, cx + o, cy - o), fill=(*_LAUNCH_RED, alpha), width=max(3, r // 4))
+
+def _draw_launch_problem(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 0-4s: fresh UI feature + editing timeline with red X's over tools.
+    ink, lime, gray, border = style["fg"], style["accent"], style["muted"], style["card_border"]
+    cx = S["w"] // 2
+    cy = int(S["h"] * 0.36)
+    # feature card
+    e = _ease_out_cubic(_clamp01(p / 0.22))
+    if e > 0:
+        a = int(255 * e)
+        cw, ch = int(S["w"] * 0.42), int(S["h"] * 0.26)
+        x0, y0 = cx - cw // 2, cy - ch // 2 + int((1 - e) * S["h"] * 0.06)
+        x1, y1 = x0 + cw, y0 + ch
+        _launch_shadow(draw, (x0, y0, x1, y1), int(S["h"] * 0.012), a, S)
+        _rounded_rect(draw, (x0, y0, x1, y1), radius=int(S["h"] * 0.012),
+                      fill=(255, 255, 255, a),
+                      outline=(*border[:3], int(200 * a / 255)), width=max(1, S["stroke"] // 2))
+        # mock hero: headline bars + lime button
+        for i, wfrac in enumerate((0.55, 0.38)):
+            lw = int(cw * wfrac)
+            _rounded_rect(draw, (x0 + int(S["w"] * 0.03), y0 + int(S["h"] * 0.035) + i * int(S["h"] * 0.032),
+                                 x0 + int(S["w"] * 0.03) + lw, y0 + int(S["h"] * 0.035) + i * int(S["h"] * 0.032) + int(S["h"] * 0.016)),
+                          radius=int(S["h"] * 0.006), fill=(225, 228, 224, a), outline=None)
+        bny0 = y0 + int(S["h"] * 0.13)
+        bnh = int(S["h"] * 0.045)
+        bnw = int(cw * 0.34)
+        _rounded_rect(draw, (x0 + int(S["w"] * 0.03), bny0, x0 + int(S["w"] * 0.03) + bnw, bny0 + bnh),
+                      radius=bnh // 2, fill=(*lime[:3], a), outline=None)
+        f_bn = _font(config.MGFX_FONT_BOLD, max(10, int(S["h"] * 0.015)))
+        bt = "New feature"
+        btw, _ = _text_bbox(bt, f_bn)
+        draw.text((x0 + int(S["w"] * 0.03) + (bnw - btw) // 2, bny0 + bnh // 2 - f_bn.getbbox(bt)[3] // 2),
+                  bt, font=f_bn, fill=(17, 23, 20, a))
+        f_ok = _font(config.MGFX_FONT_BOLD, max(10, int(S["h"] * 0.014)))
+        ok = "shipped"
+        otw, _ = _text_bbox(ok, f_ok)
+        ox = x1 - otw - int(S["w"] * 0.025)
+        draw.text((ox, y0 + int(S["h"] * 0.030)), ok,
+                  font=f_ok, fill=(*style["accent2"][:3], a))
+        odr = int(S["h"] * 0.006)
+        ocx, ocy = ox - int(S["w"] * 0.009), y0 + int(S["h"] * 0.030) + int(S["h"] * 0.009)
+        draw.ellipse((ocx - odr, ocy - odr, ocx + odr, ocy + odr), fill=(*lime[:3], a))
+    # timeline bar
+    tp = _clamp01((p - 0.22) / 0.25)
+    if tp > 0:
+        te = _ease_out_cubic(tp)
+        ta = int(255 * te)
+        tw, th = int(S["w"] * 0.56), int(S["h"] * 0.085)
+        tx0, ty0 = cx - tw // 2, cy + int(S["h"] * 0.20) + int((1 - te) * S["h"] * 0.03)
+        tx1, ty1 = tx0 + tw, ty0 + th
+        _rounded_rect(draw, (tx0, ty0, tx1, ty1), radius=int(S["h"] * 0.010),
+                      fill=(17, 23, 20, ta), outline=None)
+        # clips
+        for i, (c0, c1) in enumerate(((0.04, 0.30), (0.33, 0.62), (0.65, 0.90))):
+            _rounded_rect(draw, (tx0 + int(tw * c0), ty0 + int(S["h"] * 0.018),
+                                 tx0 + int(tw * c1), ty1 - int(S["h"] * 0.018)),
+                          radius=int(S["h"] * 0.006),
+                          fill=(52, 58, 55, ta) if i != 1 else (77, 138, 24, ta), outline=None)
+        # playhead
+        px = tx0 + int(tw * (0.10 + 0.35 * _clamp01((p - 0.3) / 0.6)))
+        draw.line((px, ty0 + 4, px, ty1 - 4), fill=(255, 255, 255, ta), width=3)
+    # tool chips with red X's
+    tools = ["CROP", "ZOOM", "KEYFRAME"]
+    chip_y = cy + int(S["h"] * 0.325)
+    for i, tool in enumerate(tools):
+        xp = _clamp01((p - 0.42 - i * 0.09) / 0.22)
+        if xp <= 0:
+            continue
+        xe = _ease_out_back(xp) if xp < 0.9 else _ease_out_cubic(xp)
+        xa = int(255 * _clamp01(xp / 0.3))
+        f_t = _font(config.MGFX_FONT_BOLD, max(11, int(S["h"] * 0.016)))
+        tww, _ = _text_bbox(tool, f_t)
+        pad = int(S["w"] * 0.012)
+        chw = tww + pad * 2 + int(S["h"] * 0.030)
+        chh = int(S["h"] * 0.042)
+        total = len(tools) * chw + 2 * int(S["w"] * 0.018)
+        sx = cx - total // 2 + i * (chw + int(S["w"] * 0.018))
+        sy = chip_y + int((1 - xe) * S["h"] * 0.02)
+        _rounded_rect(draw, (sx, sy, sx + chw, sy + chh), radius=chh // 2,
+                      fill=(255, 255, 255, xa),
+                      outline=(217, 220, 216, int(220 * xa / 255)), width=max(1, S["stroke"] // 2))
+        draw.text((sx + pad, sy + chh // 2 - f_t.getbbox(tool)[3] // 2), tool,
+                  font=f_t, fill=(93, 102, 98, xa))
+        _launch_redx(draw, int(sx + chw - pad - S["h"] * 0.011), int(sy + chh // 2),
+                     int(S["h"] * 0.011), int(xa * _clamp01((xp - 0.35) / 0.3)))
+    _launch_caption(draw, ["You built the feature.",
+                           "Don't waste time editing a video."],
+                    cx, int(S["h"] * 0.815), p, S, t0=0.04)
+
+def _draw_launch_tag(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 4-8s: tag component (lime highlight) + terminal /clep:clep.
+    ink, lime, green, gray, border = (style["fg"], style["accent"], style["accent2"],
+                                      style["muted"], style["card_border"])
+    cx = S["w"] // 2
+    cy = int(S["h"] * 0.40)
+    # code card
+    e = _ease_out_cubic(_clamp01(p / 0.22))
+    if e > 0:
+        a = int(255 * e)
+        cw, ch = int(S["w"] * 0.46), int(S["h"] * 0.27)
+        x0, y0 = cx - cw // 2, cy - ch // 2 - int(S["h"] * 0.06) + int((1 - e) * S["h"] * 0.06)
+        x1, y1 = x0 + cw, y0 + ch
+        _launch_shadow(draw, (x0, y0, x1, y1), int(S["h"] * 0.012), a, S)
+        _rounded_rect(draw, (x0, y0, x1, y1), radius=int(S["h"] * 0.012),
+                      fill=(255, 255, 255, a),
+                      outline=(*border[:3], int(200 * a / 255)), width=max(1, S["stroke"] // 2))
+        f_c = _font(config.MGFX_FONT_REGULAR, max(13, int(S["h"] * 0.021)))
+        f_cb = _font(config.MGFX_FONT_BOLD, max(13, int(S["h"] * 0.021)))
+        tx = x0 + int(S["w"] * 0.028)
+        ty = y0 + int(S["h"] * 0.035)
+        lh = int(S["h"] * 0.042)
+        draw.text((tx, ty), "<button", font=f_c, fill=(*gray[:3], a))
+        attr = 'data-clep="ai-research"'
+        aw, ah = _text_bbox(attr, f_cb)
+        hp = _ease_out_cubic(_clamp01((p - 0.30) / 0.22))
+        if hp > 0:
+            pad = int(S["h"] * 0.005)
+            _rounded_rect(draw, (tx + int(S["w"] * 0.012) - pad, ty + lh - pad // 2,
+                                 tx + int(S["w"] * 0.012) + int((aw + pad * 2) * hp), ty + lh + ah + pad),
+                          radius=int(S["h"] * 0.005), fill=(*lime[:3], a), outline=None)
+        if p > 0.14:
+            la = int(a * _clamp01((p - 0.14) / 0.15))
+            draw.text((tx + int(S["w"] * 0.012), ty + lh), attr, font=f_cb, fill=(17, 23, 20, la))
+        if p > 0.30:
+            la2 = int(a * _clamp01((p - 0.30) / 0.15))
+            draw.text((tx, ty + lh * 2), "onClick={runResearch}>", font=f_c, fill=(*gray[:3], la2))
+        if p > 0.40:
+            la3 = int(a * _clamp01((p - 0.40) / 0.15))
+            draw.text((tx, ty + lh * 3), "  Research", font=f_c, fill=(*ink[:3], la3))
+            draw.text((tx, ty + lh * 4), "</button>", font=f_c, fill=(*gray[:3], la3))
+    # terminal card
+    tp = _clamp01((p - 0.38) / 0.25)
+    if tp > 0:
+        te = _ease_out_cubic(tp)
+        ta = int(255 * te)
+        tw, th = int(S["w"] * 0.46), int(S["h"] * 0.105)
+        tx0, ty0 = cx - tw // 2, cy + int(S["h"] * 0.135) + int((1 - te) * S["h"] * 0.05)
+        tx1, ty1 = tx0 + tw, ty0 + th
+        _launch_shadow(draw, (tx0, ty0, tx1, ty1), int(S["h"] * 0.010), ta, S)
+        _rounded_rect(draw, (tx0, ty0, tx1, ty1), radius=int(S["h"] * 0.010),
+                      fill=(17, 23, 20, ta), outline=None)
+        dot_r = int(S["h"] * 0.005)
+        for i in range(3):
+            dx = tx0 + int(S["w"] * 0.014) + i * (dot_r * 2 + int(S["w"] * 0.004))
+            draw.ellipse((dx - dot_r, ty0 + int(S["h"] * 0.020) - dot_r,
+                          dx + dot_r, ty0 + int(S["h"] * 0.020) + dot_r),
+                         fill=(70, 76, 73, ta))
+        f_m = _font(config.MGFX_FONT_REGULAR, max(13, int(S["h"] * 0.021)))
+        cmd = "/clep:clep"
+        nch = int(len(cmd) * _ease_out_cubic(_clamp01((p - 0.45) / 0.25)) + 0.5)
+        vis = cmd[:nch]
+        qx = tx0 + int(S["w"] * 0.022)
+        qy = ty0 + int(S["h"] * 0.042)
+        draw.text((qx, qy), "$ ", font=f_m, fill=(93, 102, 98, ta))
+        pw, _ = _text_bbox("$ ", f_m)
+        draw.text((qx + pw, qy), vis, font=f_m, fill=(184, 255, 25, ta))
+        if nch < len(cmd) and (int(p * 10) % 10) < 6:
+            vw, _ = _text_bbox(vis, f_m)
+            _, vh = _text_bbox("Ag", f_m)
+            draw.line((qx + pw + vw + 4, qy, qx + pw + vw + 4, qy + vh),
+                      fill=(184, 255, 25, ta), width=3)
+        if p > 0.72:
+            ra = int(ta * _clamp01((p - 0.72) / 0.15))
+            f_r2 = _font(config.MGFX_FONT_BOLD, max(11, int(S["h"] * 0.015)))
+            rt = "▸ run"
+            rtw, _ = _text_bbox(rt, f_r2)
+            rpad = int(S["w"] * 0.010)
+            rh2 = int(S["h"] * 0.032)
+            rx1 = tx1 - int(S["w"] * 0.018)
+            rx0 = rx1 - rtw - rpad * 2
+            ry0 = (ty0 + ty1) // 2 - rh2 // 2 + int(S["h"] * 0.008)
+            _rounded_rect(draw, (rx0, ry0, rx1, ry0 + rh2), radius=rh2 // 2,
+                          fill=(184, 255, 25, ra), outline=None)
+            draw.text((rx0 + rpad, ry0 + rh2 // 2 - f_r2.getbbox(rt)[3] // 2), rt,
+                      font=f_r2, fill=(17, 23, 20, ra))
+    _launch_caption(draw, ["Just tag your code.",
+                           "One command does the rest."],
+                    cx, int(S["h"] * 0.815), p, S, t0=0.10)
+
+def _draw_launch_drive(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 8-13s: browser click (A) -> camera zoom + loading -> results (B).
+    ink, lime, green, gray, border = (style["fg"], style["accent"], style["accent2"],
+                                      style["muted"], style["card_border"])
+    cx = S["w"] // 2
+    cy = int(S["h"] * 0.38)
+    # stage A: browser mini with cursor click
+    a_out = 1 - _clamp01((p - 0.36) / 0.10)
+    if a_out > 0 and p < 0.48:
+        ap = _clamp01(p / 0.40)
+        e = _ease_out_cubic(_clamp01(ap / 0.30))
+        a = int(255 * e * a_out)
+        cw, ch = int(S["w"] * 0.40), int(S["h"] * 0.42)
+        x0, y0 = cx - cw // 2, cy - ch // 2
+        x1, y1 = x0 + cw, y0 + ch
+        _launch_shadow(draw, (x0, y0, x1, y1), int(S["h"] * 0.012), a, S)
+        _rounded_rect(draw, (x0, y0, x1, y1), radius=int(S["h"] * 0.012),
+                      fill=(255, 255, 255, a),
+                      outline=(*border[:3], int(200 * a / 255)), width=max(1, S["stroke"] // 2))
+        f_t = _font(config.MGFX_FONT_BOLD, max(18, int(S["h"] * 0.034)))
+        t = "AI Research"
+        tww, _ = _text_bbox(t, f_t)
+        draw.text((cx - tww // 2, y0 + int(S["h"] * 0.035)), t, font=f_t, fill=(*ink[:3], a))
+        bw, bh = int(cw * 0.52), int(S["h"] * 0.058)
+        bx0, by0 = cx - bw // 2, y0 + ch - int(S["h"] * 0.10)
+        punch = 0.0
+        if ap > 0.72:
+            punch = 0.10 * math.exp(-(ap - 0.72) * 14) * math.cos((ap - 0.72) * 28)
+        bw2, bh2 = int(bw * (1 + punch)), int(bh * (1 + punch))
+        bx0, by0 = cx - bw2 // 2, (by0 + by0 + bh) // 2 - bh2 // 2
+        _rounded_rect(draw, (bx0, by0, bx0 + bw2, by0 + bh2), radius=bh2 // 2,
+                      fill=(*lime[:3], a), outline=None)
+        f_b = _font(config.MGFX_FONT_BOLD, max(12, int(S["h"] * 0.019)))
+        bt = "Research"
+        btw, _ = _text_bbox(bt, f_b)
+        draw.text((cx - btw // 2, by0 + bh2 // 2 - f_b.getbbox(bt)[3] // 2), bt,
+                  font=f_b, fill=(17, 23, 20, a))
+        btn_cx, btn_cy = cx, by0 + bh2 // 2
+        if 0.30 <= ap <= 0.74:
+            cp = _ease_in_out_cubic(_clamp01((ap - 0.30) / 0.42))
+            _launch_cursor(draw, int(_lerp(S["w"] * 0.74, btn_cx + bw * 0.10, cp)),
+                           int(_lerp(S["h"] * 0.72, btn_cy, cp)), int(S["h"] * 0.026), a)
+        elif ap > 0.74:
+            _launch_cursor(draw, int(btn_cx + bw * 0.10), int(btn_cy), int(S["h"] * 0.026), a)
+        if ap > 0.72:
+            rp = _clamp01((ap - 0.72) / 0.28)
+            _launch_ripple(draw, btn_cx, btn_cy, int(S["h"] * (0.02 + 0.07 * _ease_out_cubic(rp))),
+                           int(200 * (1 - rp) * a / 255), S)
+    # stage B: camera frame zoom + loading -> results
+    bp = _clamp01((p - 0.36) / 0.64)
+    if bp > 0:
+        be = _ease_out_cubic(_clamp01(bp / 0.18))
+        ba = int(255 * be)
+        fw, fh = int(S["w"] * 0.60), int(S["h"] * 0.46)
+        fx0, fy0 = cx - fw // 2, cy - fh // 2
+        fx1, fy1 = fx0 + fw, fy0 + fh
+        draw.rounded_rectangle((fx0, fy0, fx1, fy1), radius=int(S["h"] * 0.010),
+                               fill=None, outline=(*ink[:3], int(220 * ba / 255)),
+                               width=max(2, S["stroke"] // 2))
+        tick = int(S["h"] * 0.028)
+        cww = max(3, S["stroke"])
+        for (tx, ty, dx, dy) in ((fx0, fy0, 1, 1), (fx1, fy0, -1, 1),
+                                 (fx0, fy1, 1, -1), (fx1, fy1, -1, -1)):
+            draw.line((tx, ty, tx + dx * tick, ty), fill=(*lime[:3], ba), width=cww)
+            draw.line((tx, ty, tx, ty + dy * tick), fill=(*lime[:3], ba), width=cww)
+        zoom = 1.0 + 0.35 * _ease_in_out_cubic(_clamp01((bp - 0.10) / 0.70))
+        f_b2 = _font(config.MGFX_FONT_BOLD, max(13, int(S["h"] * 0.020 * zoom)))
+        if bp < 0.55:
+            sa = int(ba * (1 - _clamp01((bp - 0.48) / 0.07)))
+            bw, bh = min(int(S["w"] * 0.28 * zoom), int(fw * 0.84)), int(S["h"] * 0.075 * zoom)
+            bx0, by0 = cx - bw // 2, cy - bh // 2
+            _rounded_rect(draw, (bx0, by0, bx0 + bw, by0 + bh), radius=bh // 2,
+                          fill=(255, 255, 255, sa),
+                          outline=(*ink[:3], int(160 * sa / 255)), width=max(2, S["stroke"] // 2))
+            sp_cx, sp_cy = bx0 + int(bh * 0.7), cy
+            sp_r = int(bh * 0.20)
+            for i in range(10):
+                ang = math.radians(i * 36 + p * 540)
+                ia = int(sa * (0.25 + 0.75 * i / 9))
+                draw.ellipse((sp_cx + int(sp_r * math.cos(ang)) - 3, sp_cy + int(sp_r * math.sin(ang)) - 3,
+                              sp_cx + int(sp_r * math.cos(ang)) + 3, sp_cy + int(sp_r * math.sin(ang)) + 3),
+                             fill=(*green[:3], ia))
+            t = "LOADING"
+            draw.text((sp_cx + int(bh * 0.55), sp_cy - f_b2.getbbox(t)[3] // 2), t,
+                      font=f_b2, fill=(*ink[:3], sa))
+        else:
+            sa = int(ba * _clamp01((bp - 0.55) / 0.10))
+            rw, rh = min(int(S["w"] * 0.36), int(fw * 0.86)), int(S["h"] * 0.26)
+            rx0, ry0 = cx - rw // 2, cy - rh // 2
+            _rounded_rect(draw, (rx0, ry0, rx0 + rw, ry0 + rh), radius=int(S["h"] * 0.010),
+                          fill=(255, 255, 255, sa),
+                          outline=(217, 220, 216, int(220 * sa / 255)), width=max(1, S["stroke"] // 2))
+            cr = int(S["h"] * 0.014)
+            ccx, ccy = rx0 + int(S["w"] * 0.022) + cr, ry0 + int(S["h"] * 0.034)
+            draw.ellipse((ccx - cr, ccy - cr, ccx + cr, ccy + cr), fill=(*lime[:3], sa))
+            f_r = _font(config.MGFX_FONT_BOLD, max(12, int(S["h"] * 0.018)))
+            draw.text((ccx + cr + int(S["w"] * 0.009), ccy - f_r.getbbox("Ag")[3] // 2),
+                      "RESULTS", font=f_r, fill=(*ink[:3], sa))
+            for i in range(3):
+                lp2 = _clamp01((bp - 0.62 - i * 0.07) / 0.16)
+                if lp2 <= 0:
+                    continue
+                la = int(sa * _ease_out_cubic(lp2))
+                ly = ry0 + int(S["h"] * 0.075) + i * int(S["h"] * 0.042)
+                _rounded_rect(draw, (rx0 + int(S["w"] * 0.022), ly,
+                                     rx0 + int(S["w"] * 0.022) + int(rw * (0.75 - i * 0.08)), ly + int(S["h"] * 0.018)),
+                              radius=int(S["h"] * 0.007), fill=(238, 240, 237, la), outline=None)
+        # kinetic tags
+        f_l = _font(config.MGFX_FONT_BOLD, max(10, int(S["h"] * 0.015)))
+        for txt, lx, ly, t0 in (("AUTO-ZOOM", fx0 + int(S["w"] * 0.008), fy0 - int(S["h"] * 0.042), 0.44),
+                                ("60FPS", fx1 + int(S["w"] * 0.010), cy - int(S["h"] * 0.015), 0.60)):
+            lp3 = _ease_out_cubic(_clamp01((p - t0) / 0.20))
+            if lp3 <= 0:
+                continue
+            la3 = int(255 * lp3 * ba / 255)
+            dr = int(S["h"] * 0.005)
+            draw.ellipse((lx - dr, ly - dr, lx + dr, ly + dr), fill=(*lime[:3], la3))
+            draw.text((lx + dr + int(S["w"] * 0.004), ly - f_l.getbbox(txt)[3] // 2), txt,
+                      font=f_l, fill=(*gray[:3], la3))
+    _launch_caption(draw, ["Clep drives your feature.",
+                           "Auto-zooms, follows cursors, and exports in 60fps."],
+                    cx, int(S["h"] * 0.815), p, S, t0=0.42, fs_frac=0.024)
+
+def _launch_player_thumb(draw: ImageDraw.ImageDraw, x0: int, y0: int, x1: int, y1: int,
+                         prog: float, alpha: int, S: dict, badge: str | None = None):
+    """Finished-video player: dark frame, play button, lime progress."""
+    _rounded_rect(draw, (x0, y0, x1, y1), radius=int(S["h"] * 0.008),
+                  fill=(17, 23, 20, alpha), outline=(184, 255, 25, int(200 * alpha / 255)),
+                  width=max(2, S["stroke"] // 2))
+    pr = max(10, int((y1 - y0) * 0.16))
+    pcx, pcy = (x0 + x1) // 2, (y0 + y1) // 2 - int(S["h"] * 0.006)
+    draw.ellipse((pcx - pr, pcy - pr, pcx + pr, pcy + pr), fill=(255, 255, 255, alpha))
+    draw.polygon([(pcx - int(pr * 0.3), pcy - int(pr * 0.45)),
+                  (pcx - int(pr * 0.3), pcy + int(pr * 0.45)),
+                  (pcx + int(pr * 0.5), pcy)], fill=(17, 23, 20, alpha))
+    bar_y = y1 - int(S["h"] * 0.014)
+    pad = int(S["w"] * 0.010)
+    draw.line((x0 + pad, bar_y, x1 - pad, bar_y),
+              fill=(70, 76, 73, alpha), width=max(2, int(S["h"] * 0.004)))
+    if prog > 0:
+        draw.line((x0 + pad, bar_y,
+                   x0 + pad + int((x1 - x0 - pad * 2) * _clamp01(prog)), bar_y),
+                  fill=(184, 255, 25, alpha), width=max(2, int(S["h"] * 0.004)))
+    if badge:
+        f_bg = _font(config.MGFX_FONT_BOLD, max(9, int(S["h"] * 0.012)))
+        btw, _ = _text_bbox(badge, f_bg)
+        bpad = int(S["w"] * 0.006)
+        bh = int(S["h"] * 0.022)
+        _rounded_rect(draw, (x0 + pad, y0 + int(S["h"] * 0.008),
+                             x0 + pad + btw + bpad * 2, y0 + int(S["h"] * 0.008) + bh),
+                      radius=bh // 2, fill=(184, 255, 25, alpha), outline=None)
+        draw.text((x0 + pad + bpad, y0 + int(S["h"] * 0.008) + bh // 2 - f_bg.getbbox(badge)[3] // 2),
+                  badge, font=f_bg, fill=(17, 23, 20, alpha))
+
+def _draw_launch_ship(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 13-17s: finished player drops into an X post preview + landing hero.
+    ink, lime, gray, border = style["fg"], style["accent"], style["muted"], style["card_border"]
+    cx = S["w"] // 2
+    cy = int(S["h"] * 0.38)
+    # hero player drops from top, holds, then yields
+    out = _clamp01((p - 0.40) / 0.16)
+    if out < 1:
+        da = int(255 * _clamp01(p / 0.12) * (1 - out))
+        vw, vh = int(S["w"] * 0.34), int(S["h"] * 0.25)
+        vx0 = cx - vw // 2
+        vy0 = int(_lerp(-vh, cy - vh // 2, _ease_out_back(_clamp01(p / 0.28))) - out * S["h"] * 0.08)
+        prog = _clamp01((p - 0.10) / 0.28)
+        # draw player chrome manually (bigger badge + play)
+        _rounded_rect(draw, (vx0, vy0, vx0 + vw, vy0 + vh), radius=int(S["h"] * 0.010),
+                      fill=(17, 23, 20, da), outline=(*lime[:3], int(220 * da / 255)),
+                      width=max(2, S["stroke"] // 2))
+        pr = int(S["h"] * 0.030)
+        pcx, pcy = cx, vy0 + vh // 2 - int(S["h"] * 0.008)
+        draw.ellipse((pcx - pr, pcy - pr, pcx + pr, pcy + pr), fill=(255, 255, 255, da))
+        draw.polygon([(pcx - int(pr * 0.35), pcy - int(pr * 0.5)),
+                      (pcx - int(pr * 0.35), pcy + int(pr * 0.5)),
+                      (pcx + int(pr * 0.55), pcy)], fill=(17, 23, 20, da))
+        bar_y = vy0 + vh - int(S["h"] * 0.020)
+        pad = int(S["w"] * 0.016)
+        draw.line((vx0 + pad, bar_y, vx0 + vw - pad, bar_y),
+                  fill=(70, 76, 73, da), width=max(3, int(S["h"] * 0.006)))
+        if prog > 0:
+            draw.line((vx0 + pad, bar_y, vx0 + pad + int((vw - pad * 2) * prog), bar_y),
+                      fill=(*lime[:3], da), width=max(3, int(S["h"] * 0.006)))
+        f_bg = _font(config.MGFX_FONT_BOLD, max(10, int(S["h"] * 0.014)))
+        bg = "1080p · 60fps"
+        btw, _ = _text_bbox(bg, f_bg)
+        bpad = int(S["w"] * 0.008)
+        bh = int(S["h"] * 0.028)
+        _rounded_rect(draw, (vx0 + pad, vy0 + int(S["h"] * 0.012),
+                             vx0 + pad + btw + bpad * 2, vy0 + int(S["h"] * 0.012) + bh),
+                      radius=bh // 2, fill=(*lime[:3], da), outline=None)
+        draw.text((vx0 + pad + bpad, vy0 + int(S["h"] * 0.012) + bh // 2 - f_bg.getbbox(bg)[3] // 2),
+                  bg, font=f_bg, fill=(17, 23, 20, da))
+    # destinations: X post (left) + landing hero (right)
+    f_cap = _font(config.MGFX_FONT_BOLD, max(10, int(S["h"] * 0.014)))
+    dests = [("X / LINKEDIN POST", -1, 0.0), ("LANDING PAGE HERO", 1, 0.08)]
+    for label, side, delay in dests:
+        ep = _clamp01((p - 0.42 - delay) / 0.28)
+        if ep <= 0:
+            continue
+        ee = _ease_out_back(ep) if ep < 0.9 else _ease_out_cubic(ep)
+        ea = int(255 * _clamp01(ep / 0.22))
+        dw, dh = (int(S["w"] * 0.295), int(S["h"] * 0.47)) if side < 0 else (int(S["w"] * 0.33), int(S["h"] * 0.47))
+        home = cx + side * int(S["w"] * 0.245) - dw // 2
+        x0 = int(home + side * S["w"] * 0.22 * (1 - ee))
+        y0 = cy - dh // 2 + int((1 - ee) * S["h"] * 0.03)
+        x1, y1 = x0 + dw, y0 + dh
+        _launch_shadow(draw, (x0, y0, x1, y1), int(S["h"] * 0.010), ea, S)
+        _rounded_rect(draw, (x0, y0, x1, y1), radius=int(S["h"] * 0.010),
+                      fill=(255, 255, 255, ea),
+                      outline=(*border[:3], int(200 * ea / 255)), width=max(1, S["stroke"] // 2))
+        # frame label
+        ltw, _ = _text_bbox(label, f_cap)
+        draw.text((x0 + (dw - ltw) // 2, y0 - int(S["h"] * 0.034)), label,
+                  font=f_cap, fill=(*gray[:3], ea))
+        if side < 0:
+            # X post: avatar + name + body + player thumb
+            ar = int(S["h"] * 0.017)
+            acx, acy = x0 + int(S["w"] * 0.020) + ar, y0 + int(S["h"] * 0.036)
+            draw.ellipse((acx - ar, acy - ar, acx + ar, acy + ar), fill=(17, 23, 20, ea))
+            f_nm = _font(config.MGFX_FONT_BOLD, max(11, int(S["h"] * 0.016)))
+            f_hd = _font(config.MGFX_FONT_REGULAR, max(10, int(S["h"] * 0.014)))
+            draw.text((acx + ar + int(S["w"] * 0.008), acy - int(S["h"] * 0.018)), "Clep",
+                      font=f_nm, fill=(*ink[:3], ea))
+            draw.text((acx + ar + int(S["w"] * 0.008), acy + int(S["h"] * 0.002)), "@clep_dev · now",
+                      font=f_hd, fill=(*gray[:3], ea))
+            f_post = _font(config.MGFX_FONT_REGULAR, max(11, int(S["h"] * 0.016)))
+            post = "AI Research is live — watch it work."
+            ptw, _ = _text_bbox(post, f_post)
+            if ptw > dw - int(S["w"] * 0.04):
+                post = "AI Research is live."
+                ptw, _ = _text_bbox(post, f_post)
+            draw.text((x0 + int(S["w"] * 0.020), y0 + int(S["h"] * 0.075)), post,
+                      font=f_post, fill=(*ink[:3], ea))
+            thumb_y0 = y0 + int(S["h"] * 0.115)
+        else:
+            # landing hero: browser chrome + headline + CTA + player thumb
+            bar_h = int(S["h"] * 0.038)
+            _rounded_rect(draw, (x0, y0, x1, y0 + bar_h), radius=int(S["h"] * 0.010),
+                          fill=(235, 235, 232, ea), outline=None)
+            draw.rectangle((x0, y0 + bar_h // 2, x1, y0 + bar_h), fill=(235, 235, 232, ea))
+            dot_r = int(S["h"] * 0.004)
+            for i in range(3):
+                dx = x0 + int(S["w"] * 0.012) + i * (dot_r * 2 + int(S["w"] * 0.003))
+                draw.ellipse((dx - dot_r, y0 + bar_h // 2 - dot_r, dx + dot_r, y0 + bar_h // 2 + dot_r),
+                             fill=(200, 204, 200, ea))
+            f_url = _font(config.MGFX_FONT_REGULAR, max(9, int(S["h"] * 0.012)))
+            u = "clep.dev"
+            utw, _ = _text_bbox(u, f_url)
+            draw.text((x0 + (dw - utw) // 2, y0 + bar_h // 2 - f_url.getbbox(u)[3] // 2), u,
+                      font=f_url, fill=(*gray[:3], ea))
+            f_hl = _font(config.MGFX_FONT_BOLD, max(13, int(S["h"] * 0.020)))
+            hl = "Ship features, show video."
+            hlw, _ = _text_bbox(hl, f_hl)
+            if hlw > dw - int(S["w"] * 0.036):
+                hl = "Show your feature."
+            draw.text((x0 + int(S["w"] * 0.018), y0 + bar_h + int(S["h"] * 0.014)), hl,
+                      font=f_hl, fill=(*ink[:3], ea))
+            f_cta = _font(config.MGFX_FONT_BOLD, max(10, int(S["h"] * 0.013)))
+            ct = "Watch demo"
+            ctw, _ = _text_bbox(ct, f_cta)
+            cpad = int(S["w"] * 0.008)
+            chh = int(S["h"] * 0.028)
+            _rounded_rect(draw, (x0 + int(S["w"] * 0.018), y0 + bar_h + int(S["h"] * 0.058),
+                                 x0 + int(S["w"] * 0.018) + ctw + cpad * 2, y0 + bar_h + int(S["h"] * 0.058) + chh),
+                          radius=chh // 2, fill=(*lime[:3], ea), outline=None)
+            draw.text((x0 + int(S["w"] * 0.018) + cpad,
+                       y0 + bar_h + int(S["h"] * 0.058) + chh // 2 - f_cta.getbbox(ct)[3] // 2), ct,
+                      font=f_cta, fill=(17, 23, 20, ea))
+            thumb_y0 = y0 + bar_h + int(S["h"] * 0.115)
+        # player thumb drops into its slot with overshoot + lime landing ring
+        vp = _clamp01((p - 0.60 - delay) / 0.22)
+        if vp > 0:
+            ve = _ease_out_back(vp) if vp < 0.9 else _ease_out_cubic(vp)
+            va = int(ea * _clamp01(vp / 0.25))
+            tw2 = int(dw * 0.88)
+            th2 = y1 - thumb_y0 - int(S["h"] * 0.016)
+            tx0 = x0 + (dw - tw2) // 2
+            ty0 = int(thumb_y0 - S["h"] * 0.10 * (1 - ve))
+            _launch_player_thumb(draw, tx0, ty0, tx0 + tw2, ty0 + th2,
+                                 _ease_out_cubic(_clamp01((p - 0.72 - delay) / 0.25)), va, S,
+                                 badge="0:05")
+            if 0.55 < vp < 1.0:
+                rp = _clamp01((vp - 0.55) / 0.30)
+                _launch_ripple(draw, tx0 + tw2 // 2, ty0 + th2 // 2,
+                               int(S["h"] * (0.02 + 0.06 * _ease_out_cubic(rp))),
+                               int(160 * (1 - rp) * va / 255), S)
+    _launch_caption(draw, ["Get a cinematic demo.",
+                           "Ready to share everywhere."],
+                    cx, int(S["h"] * 0.815), p, S, t0=0.44)
+
+def _draw_launch_endcard(draw: ImageDraw.ImageDraw, spec: dict, p: float, style: dict, S: dict):
+    # 17-20s: wordmark + headline + clep.dev / /clep:clep.
+    ink, lime, green, gray = style["fg"], style["accent"], style["accent2"], style["muted"]
+    cx, cy = S["w"] // 2, S["h"] // 2 - int(S["h"] * 0.02)
+    e = _ease_out_cubic(_clamp01(p / 0.25))
+    if e > 0:
+        f_wm = _font(config.MGFX_FONT_BLACK, max(28, int(S["h"] * 0.055)))
+        tww, _ = _text_bbox("clep", f_wm)
+        draw.text((cx - tww // 2, cy - int(S["h"] * 0.16) + int((1 - e) * S["h"] * 0.02)),
+                  "clep", font=f_wm, fill=(*ink[:3], int(255 * e)))
+    if p > 0.22:
+        sp = _clamp01((p - 0.22) / 0.45)
+        f_t = _font(config.MGFX_FONT_BOLD, max(20, int(S["h"] * 0.042)))
+        f_ti = _font(config.MGFX_FONT_SERIF_ITALIC, max(20, int(S["h"] * 0.042)))
+        segs = [("Turn", ink, f_t), ("your", ink, f_t), ("code", green, f_ti),
+                ("into", ink, f_t), ("product", ink, f_t), ("videos.", ink, f_t)]
+        _launch_rich_line(draw, segs, cx, cy - int(S["h"] * 0.02), sp, S,
+                          stagger=0.06, dur=0.28)
+    if p > 0.55:
+        cp = _clamp01((p - 0.55) / 0.30)
+        ce = _ease_out_cubic(cp)
+        ca = int(255 * ce)
+        f_u = _font(config.MGFX_FONT_REGULAR, max(14, int(S["h"] * 0.022)))
+        f_cmd = _font(config.MGFX_FONT_BOLD, max(14, int(S["h"] * 0.022)))
+        u, c = "clep.dev", "/clep:clep"
+        uw, _ = _text_bbox(u, f_u)
+        cw_, _ = _text_bbox(c, f_cmd)
+        dot_w = int(S["w"] * 0.020)
+        pad = int(S["w"] * 0.012)
+        pill_w = cw_ + pad * 2
+        total = uw + dot_w + pill_w
+        sx = cx - total // 2
+        sy = cy + int(S["h"] * 0.075) + int((1 - ce) * S["h"] * 0.015)
+        draw.text((sx, sy), u, font=f_u, fill=(*gray[:3], ca))
+        dr = int(S["h"] * 0.005)
+        draw.ellipse((sx + uw + dot_w // 2 - dr, sy + int(S["h"] * 0.013) - dr,
+                      sx + uw + dot_w // 2 + dr, sy + int(S["h"] * 0.013) + dr),
+                     fill=(*lime[:3], ca))
+        ph = int(S["h"] * 0.040)
+        px0 = sx + uw + dot_w
+        _rounded_rect(draw, (px0, sy - int(S["h"] * 0.008), px0 + pill_w, sy - int(S["h"] * 0.008) + ph),
+                      radius=ph // 2, fill=(*lime[:3], ca), outline=None)
+        draw.text((px0 + pad, sy - int(S["h"] * 0.008) + ph // 2 - f_cmd.getbbox(c)[3] // 2), c,
+                  font=f_cmd, fill=(17, 23, 20, ca))
+
+
 def _spec_for_beat(beat: dict) -> tuple[dict, str]:
     # Returns (spec_dict, style_name)
     # Priority: kinetic > clean > mgfx > diagram
@@ -2966,9 +4170,9 @@ def render_mgfx_clip(beat: dict, canvas_w: int, canvas_h: int, duration: float,
         try:
             # skip for talo_logo which already draws its own huge ghost (avoid double)
             # also skip for clep (has its own lime watermark handling)
-            if spec.get("layout") in ("talo_logo","logo","taloLogo") or str(spec.get("layout","")).startswith("clep_"):
+            if spec.get("layout") in ("talo_logo","logo","taloLogo") or str(spec.get("layout","")).startswith("clep_") or str(spec.get("layout","")).startswith("launch_"):
                 pass
-            elif style_name in ("clep","clep_lime","clep_dark"):
+            elif style_name in ("clep","clep_lime","clep_dark","clep_launch"):
                 pass
             else:
                 is_dark_bg = style.get("bg", (255,255,255))[0] < 30
@@ -3046,6 +4250,32 @@ def render_mgfx_clip(beat: dict, canvas_w: int, canvas_h: int, duration: float,
             _draw_clep_range(draw, spec, _clamp01(t / max(duration*0.88,0.5)), style, S)
         elif layout in ("clep_lockup", "clep_logo", "clepLockup"):
             _draw_clep_lockup(draw, spec, _clamp01(t / max(duration*0.85,0.5)), style, S)
+        elif layout in ("launch_hook",):
+            _draw_launch_hook(draw, spec, _clamp01(t / max(duration*0.92,0.5)), style, S)
+        elif layout in ("launch_code",):
+            _draw_launch_code(draw, spec, _clamp01(t / max(duration*0.92,0.5)), style, S)
+        elif layout in ("launch_browser",):
+            _draw_launch_browser(draw, spec, _clamp01(t / max(duration*0.92,0.5)), style, S)
+        elif layout in ("launch_camera",):
+            _draw_launch_camera(draw, spec, _clamp01(t / max(duration*0.92,0.5)), style, S)
+        elif layout in ("launch_norecord",):
+            _draw_launch_norecord(draw, spec, _clamp01(t / max(duration*0.92,0.5)), style, S)
+        elif layout in ("launch_cards",):
+            _draw_launch_cards(draw, spec, _clamp01(t / max(duration*0.92,0.5)), style, S)
+        elif layout in ("launch_lockup",):
+            _draw_launch_lockup(draw, spec, _clamp01(t / max(duration*0.90,0.5)), style, S)
+        elif layout in ("launch_cta",):
+            _draw_launch_cta(draw, spec, _clamp01(t / max(duration*0.92,0.5)), style, S)
+        elif layout in ("launch_problem",):
+            _draw_launch_problem(draw, spec, _clamp01(t / max(duration*0.94,0.5)), style, S)
+        elif layout in ("launch_tag",):
+            _draw_launch_tag(draw, spec, _clamp01(t / max(duration*0.94,0.5)), style, S)
+        elif layout in ("launch_drive",):
+            _draw_launch_drive(draw, spec, _clamp01(t / max(duration*0.96,0.5)), style, S)
+        elif layout in ("launch_ship",):
+            _draw_launch_ship(draw, spec, _clamp01(t / max(duration*0.94,0.5)), style, S)
+        elif layout in ("launch_endcard",):
+            _draw_launch_endcard(draw, spec, _clamp01(t / max(duration*0.92,0.5)), style, S)
         else:
             # unknown -> headline fallback
             _draw_headline(draw, spec, _clamp01(t / (duration*0.85)), style, S)

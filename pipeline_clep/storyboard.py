@@ -40,7 +40,8 @@ def _get(steps, types, default=None):
 
 
 def build_plan(feature: dict, duration: float | None = None,
-               aspect: str | None = None, style: str | None = None) -> dict:
+               aspect: str | None = None, style: str | None = None,
+               size: str | None = None) -> dict:
     steps = feature.get("steps") or []
     # Accept SDK-native interactions/states when steps absent:
     # click -> input -> submit -> loading -> result ordering is preserved.
@@ -87,8 +88,18 @@ def build_plan(feature: dict, duration: float | None = None,
     # Narrow canvases (portrait) already fill width with the card, so they
     # push less — same move, reframed per aspect.
     aspect_name = aspect or feature.get("aspect") or "16:9"
+    if size or feature.get("size"):
+        try:
+            import config as _cfg
+
+            _w, _h = _cfg.canvas(size=size or feature.get("size"))
+            aspect_name = _cfg.aspect_class(_w, _h)
+        except ValueError:
+            pass
     if aspect_name == "9:16":
         push, pull = 1.9, 1.25
+    elif aspect_name == "3:2":
+        push, pull = 1.6, 1.3
     elif aspect_name == "4:5":
         push, pull = 1.6, 1.2
     elif aspect_name == "1:1":
@@ -141,6 +152,7 @@ def build_plan(feature: dict, duration: float | None = None,
         "name": str(feature.get("name") or "feature"),
         "url": str(feature.get("url") or "app.clep.io"),
         "aspect": aspect or feature.get("aspect") or "16:9",
+        "size": size or feature.get("size"),
         "style": style or feature.get("style") or "saas",
         "screenshot": feature.get("screenshot"),
     }

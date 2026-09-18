@@ -13,6 +13,91 @@ sdk/clep.js  ──data-clep──▶  agent  ──records──▶  raw webm +
 Single-pass streaming: Playwright webm → decode pipe → Pillow edit →
 encode pipe. No intermediate files.
 
+## Quickstart (natural language — recommended)
+
+Describe the clip; the director understands the page, plans, then shoots:
+
+```bash
+# Walkthrough / portfolio overview / feature showcase (any URL, no instrumentation needed)
+python allore.py --mode clep \
+  --prompt "/clep walkthrough of https://acme.ai showing hero, pricing and contact, 10s calm" \
+  --out pipeline_clep/output/tour.mp4
+
+# Single feature demo (needs [data-clep="ai-research"] on the page)
+python allore.py --mode clep \
+  --prompt "/clep demo of the ai-research feature at https://acme.ai/dashboard with query \"AI agents\", 8s" \
+  --out pipeline_clep/output/ai.mp4
+
+# UI mockup (no browser — renders from a prompt)
+python allore.py --mode clep --prompt "mockup of Quarterly Report, cinematic, 5s" \
+  --out pipeline_clep/output/mock.mp4
+```
+
+What the director does: parses kind (tour / feature / mockup), URL,
+sections, style, duration, movement; scans the live page (title,
+headings, `data-clep` features); maps what you asked onto what the page
+actually has; prints the shoot plan (`✓` matched, `○ caption` fallback).
+Overrides: `--kind {tour,feature,mockup}` `--sections "hero, pricing"`
+`--movement {calm,standard,dynamic}` `--no-captions`.
+
+Camera discipline: tours hold the full window wide (calm ≤1.1x zoom,
+cursor parked, section captions) — the scroll does the moving, so text
+never crops. Feature demos push per action (standard ≤1.35x, dynamic
+≤1.65x) with cursor + click ripples.
+
+## Landing-page cards (3–4s demo loops)
+
+Cards like "Make it pop" want a small muted loop at the exact demo-area
+size — not a 1080p feature clip. Measure the demo box in devtools
+(right-click → Inspect → read the rendered WxH), then pass it as `--size`:
+
+```bash
+# UI mockup loop, exact card size, 3.5s, small file
+python allore.py --mode clep --feature pipeline_clep/demo/ai-research.feature.json \
+  --size 1120x640 --duration 3.5 --fps 30 --out card-mock.mp4
+
+# Same from words ("landing card" implies 1120x640; WxH overrides it)
+python allore.py --mode clep \
+  --prompt "landing card loop of the ai-research feature at https://acme.ai, 960x600, 4s, no captions" \
+  --out card-feature.mp4
+
+# Walkthrough loop at card size (tour path takes --size too)
+python allore.py --mode clep --prompt "walkthrough of https://acme.ai showing pricing, 1120x640, 4s" \
+  --out card-tour.mp4
+```
+
+Rules of thumb: `--size` always wins over `--aspect/--quality`; keep sides
+even and 160–4096; 30fps + 720p-ish sizes keep each loop under ~500KB.
+
+### Backgrounds (`--bg` / API `{bg}`)
+
+The window floats on a gradient canvas. Pick per clip — preset, your own
+brand gradient, or a flat color (mockups render full-bleed, so `--bg`
+applies to recorded tour/feature clips):
+
+```bash
+--bg blush                        # pale pink, blends into light landing pages
+--bg cinematic                    # any preset: saas, minimal, cinematic, apple, blush
+--bg "#F5E6F0,#B486B8,#5B2A86"    # custom 3-stop gradient (2-stop also works)
+--bg "solid:#FFF5F7"              # flat color
+```
+
+In words: `--prompt "landing card loop of https://x showing hero, bg blush, 4s"`.
+API: `POST /api/clips {prompt?, url?, kind?, bg?, size?, ...}` — bad values
+fail fast with `bad --bg ...` before any recording starts.
+Embed with rounded corners + autoplay:
+
+```html
+<video src="/cards/make-it-pop.mp4" autoplay muted loop playsinline
+       width="1120" height="640" style="border-radius:16px"></video>
+```
+
+Poster frame for instant paint (no blank card while the video loads):
+
+```bash
+ffmpeg -y -v error -ss 0.8 -i card-mock.mp4 -frames:v 1 card-mock-poster.jpg
+```
+
 ## Quickstart (agent — real app, 16:9)
 
 ```bash
@@ -49,7 +134,9 @@ The SDK reports live too:
 ```
 
 API: `GET /api/features?url=` · `GET /api/registry` · `POST /api/ingest` ·
-`POST /api/clips {url, name, query?, style?, steps?}` · `GET /api/jobs[/<id>]`.
+`POST /api/clips {prompt?, url?, name?, kind?, sections?, movement?, captions?, size?, query?, style?, steps?}` · `GET /api/jobs[/<id>]`.
+Prompt example: `{prompt: "/clep walkthrough of https://x showing pricing", movement: "calm"}`.
+Tour-only (no prompt): `{url, kind: "tour", sections: ["pricing"]}`.
 
 ## Multi-step features (chained clicks across states)
 
@@ -131,11 +218,12 @@ Without Playwright the synthetic path (zero extra deps) always works.
 
 | file | role |
 |---|---|
-| `agent.py` | Playwright cameraman: `discover()` registry + `record()` raw webm + trace.json |
-| `polish.py` | Screen-Studio edit of the raw capture (camera, cursor, ripple, ring, pill) |
+| `director.py` | NL command → ClipSpec (tour/feature/mockup) + page-grounded shoot plan |
+| `agent.py` | Playwright cameraman: `discover()` registry + `record()` raw webm + trace.json + `scan_content()` page understanding + `record_tour()` scroll showcase (no instrumentation needed) |
+| `polish.py` | Screen-Studio edit of the raw capture (movement-capped camera, tour hold-wide + captions, cursor, ripple, ring, pill) |
 | `config.py` | canvas, style palettes, ffmpeg/fonts |
 | `storyboard.py` | phase timing + camera/cursor plan (synthetic path + polish timing base) |
 | `renderer.py` | synthetic UI mock + shared cursor/pill drawing |
 | `recorder.py` | one-shot stills capture → screenshot for the synthetic base (optional) |
-| `main.py` | CLI (`run(feature, out, ..., url, name, query)`) |
+| `main.py` | CLI (`run(feature, out, ..., url, name, query)` + `prompt/kind/sections/movement/captions`) |
 | `demo/` | instrumented `index.html` demo page + 2 hand-written feature.jsons |

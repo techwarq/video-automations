@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440">
+<title>DocConvert — PDF to Doc</title>
+<style>
+  :root{
+    --bg:#FAF7F1; --card:#FFFFFF; --ink:#1B1B28; --muted:#8A8A96;
+    --line:#E9E2D4; --lime:#C8F04B; --lime-ink:#1B1B28; --green:#4D8A18;
+    --track:#EFEBE0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .nav{max-width:1060px;margin:0 auto;padding:22px 32px;display:flex;align-items:center;gap:10px}
+  .logo{width:30px;height:30px;border-radius:9px;background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+  .brand{font-weight:800;font-size:17px;letter-spacing:-.01em}
+  .nav .sp{flex:1}
+  .nav a{color:var(--muted);text-decoration:none;font-size:14px;margin-left:22px}
+  .wrap{max-width:880px;margin:26px auto 60px;padding:0 32px}
+  .hero{text-align:center;margin:26px 0 24px}
+  .hero h1{font-size:52px;line-height:1.04;margin:0;letter-spacing:-.03em;font-weight:800}
+  .hero h1 em{font-style:italic;font-weight:600}
+  .hero p{color:var(--muted);font-size:17px;margin:12px 0 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;
+    box-shadow:0 24px 60px -30px rgba(27,27,40,.25);padding:30px;position:relative}
+  .badge{position:absolute;top:22px;right:24px;font-size:11px;font-weight:700;letter-spacing:.08em;
+    color:var(--green);background:#EFF7E2;border:1px solid #DCEBC4;padding:5px 10px;border-radius:999px}
+  .dropzone{border:1.5px dashed #D8D0BC;border-radius:14px;background:#FCFAF4;
+    padding:34px 20px;text-align:center;cursor:pointer;transition:border-color .15s, background .15s}
+  .dropzone:hover{border-color:var(--green);background:#F6F9EC}
+  .dz-icon{width:46px;height:46px;border-radius:14px;background:var(--lime);margin:0 auto 12px;
+    display:flex;align-items:center;justify-content:center;font-size:21px}
+  .dz-title{font-weight:700;font-size:16px}
+  .dz-sub{color:var(--muted);font-size:13.5px;margin-top:5px}
+  .dz-sub b{color:var(--ink)}
+  .filechip{display:none;align-items:center;gap:12px;border:1px solid var(--line);
+    background:#FCFAF4;border-radius:12px;padding:12px 14px;margin-top:14px}
+  .filechip.on{display:flex}
+  .f-ic{width:36px;height:36px;border-radius:10px;background:#F3EDDF;flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:16px}
+  .f-meta{flex:1;min-width:0}
+  .f-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .f-size{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .f-ok{color:var(--green);font-weight:800;font-size:15px}
+  .row{display:flex;gap:12px;margin-top:16px}
+  button{font:inherit;cursor:pointer;border:0;border-radius:12px}
+  .primary{flex:1;background:var(--lime);color:var(--lime-ink);font-weight:800;font-size:16px;
+    padding:15px;transition:transform .06s, opacity .15s}
+  .primary:active{transform:scale(.985)}
+  .primary:disabled{opacity:.45;cursor:default}
+  .ghost{background:#F1ECE0;color:var(--ink);font-weight:700;font-size:14px;padding:15px 20px}
+  .progress{display:none;margin-top:18px}
+  .progress.on{display:block}
+  .p-stages{display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;
+    color:var(--muted);margin-bottom:8px}
+  .p-stages span.done{color:var(--green)}
+  .p-stages span.live{color:var(--ink)}
+  .p-track{height:10px;border-radius:999px;background:var(--track);overflow:hidden}
+  .p-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,var(--green),#7CC24A);
+    transition:width .18s linear}
+  .p-pct{text-align:right;font-size:12.5px;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
+  .result{display:none;margin-top:18px;border:1px solid #DCEBC4;background:#F4F9EA;border-radius:14px;
+    padding:18px;align-items:center;gap:14px}
+  .result.on{display:flex;animation:rise .35s ease}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .r-ic{width:44px;height:44px;border-radius:12px;background:var(--ink);color:#fff;flex:none;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+  .r-meta{flex:1}
+  .r-name{font-weight:800;font-size:15px}
+  .r-sub{color:var(--green);font-size:13px;margin-top:3px;font-weight:600}
+  .dl{background:var(--ink);color:#fff;font-weight:800;font-size:15px;padding:13px 26px;border-radius:11px}
+  .dl:active{transform:scale(.97)}
+  .foot{text-align:center;color:var(--muted);font-size:13px;margin-top:22px}
+  input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
+</style>
+</head>
+<body>
+  <div class="nav">
+    <div class="logo">D</div><div class="brand">DocConvert</div>
+    <div class="sp"></div>
+    <a href="#">Features</a><a href="#">Pricing</a><a href="#">Sign in</a>
+  </div>
+
+  <div class="wrap">
+    <div class="hero">
+      <h1>PDF in. <em>Doc</em> out.</h1>
+      <p>Upload anything messy — get a clean, editable document back in seconds.</p>
+    </div>
+
+    <div class="card dz-card" data-clep="doc-convert" data-clep-state="empty">
+      <div class="badge" id="stateBadge">● EMPTY</div>
+
+      <div class="dropzone" id="dz" role="button">
+        <div class="dz-icon">⇪</div>
+        <div class="dz-title">Drag a document here, or <u>browse files</u></div>
+        <div class="dz-sub">PDF, scans, images — up to <b>50 MB</b></div>
+      </div>
+      <input type="file" id="file" accept=".pdf,.png,.jpg,.jpeg">
+
+      <div class="filechip" id="chip">
+        <div class="f-ic">▤</div>
+        <div class="f-meta">
+          <div class="f-name" id="fname">—</div>
+          <div class="f-size" id="fsize">—</div>
+        </div>
+        <div class="f-ok">✔</div>
+      </div>
+
+      <div class="row">
+        <button class="primary" id="convert" data-clep-action="primary" disabled>Convert to Doc</button>
+        <button class="ghost" id="reset" type="button">Reset</button>
+      </div>
+
+      <div class="progress" id="prog">
+        <div class="p-stages">
+          <span id="s1">Uploading</span><span id="s2">Converting</span><span id="s3">Polishing</span>
+        </div>
+        <div class="p-track"><div class="p-fill" id="fill"></div></div>
+        <div class="p-pct" id="pct">0%</div>
+      </div>
+
+      <div class="result" id="result">
+        <div class="r-ic">DOC</div>
+        <div class="r-meta">
+          <div class="r-name" id="rname">document.doc</div>
+          <div class="r-sub">✔ Ready — fully editable</div>
+        </div>
+        <button class="dl" id="dl">Download</button>
+      </div>
+    </div>
+
+    <div class="foot">Free for the first 3 conversions · No sign-up needed</div>
+  </div>
+
+<script>
+(function(){
+  var root = document.querySelector('[data-clep="doc-convert"]');
+  var badge = document.getElementById('stateBadge');
+  var file = document.getElementById('file');
+  var dz = document.getElementById('dz');
+  var chip = document.getElementById('chip');
+  var fname = document.getElementById('fname');
+  var fsize = document.getElementById('fsize');
+  var convert = document.getElementById('convert');
+  var reset = document.getElementById('reset');
+  var prog = document.getElementById('prog');
+  var fill = document.getElementById('fill');
+  var pct = document.getElementById('pct');
+  var result = document.getElementById('result');
+  var rname = document.getElementById('rname');
+  var dl = document.getElementById('dl');
+  var s1 = document.getElementById('s1'), s2 = document.getElementById('s2'), s3 = document.getElementById('s3');
+  var timer = null, currentName = '';
+
+  function setState(st){
+    root.setAttribute('data-clep-state', st);
+    badge.textContent = '● ' + st.toUpperCase();
+  }
+  dz.addEventListener('click', function(){ file.click(); });
+  file.addEventListener('change', function(){
+    if(!file.files.length) return;
+    var f = file.files[0];
+    currentName = f.name.replace(/\.[^.]+$/, '') + '.doc';
+    fname.textContent = f.name;
+    fsize.textContent = (f.size/1024).toFixed(0) + ' KB · PDF document';
+    chip.classList.add('on');
+    convert.disabled = false;
+    setState('ready');
+  });
+  convert.addEventListener('click', function(){
+    if(convert.disabled) return;
+    convert.disabled = true;
+    result.classList.remove('on');
+    prog.classList.add('on');
+    setState('converting');
+    var p = 0;
+    [s1,s2,s3].forEach(function(s){ s.className=''; });
+    s1.className = 'live';
+    timer = setInterval(function(){
+      p = Math.min(100, p + 2 + Math.random()*3);
+      fill.style.width = p + '%';
+      pct.textContent = Math.floor(p) + '%';
+      s1.className = p > 4 ? 'done' : 'live';
+      s2.className = p >= 35 ? (p >= 78 ? 'done' : 'live') : '';
+      s3.className = p >= 78 ? 'live' : '';
+      if(p >= 100){
+        clearInterval(timer);
+        s3.className = 'done';
+        setTimeout(function(){
+          prog.classList.remove('on');
+          rname.textContent = currentName || 'document.doc';
+          result.classList.add('on');
+          setState('done');
+        }, 450);
+      }
+    }, 70);
+  });
+  dl.addEventListener('click', function(){
+    var blob = new Blob([
+      'Converted with DocConvert\r\n==========================\r\nSource: ' + (fname.textContent || 'upload') +
+      '\r\nPages: 1\r\nStatus: clean, editable, ready to share.\r\n'], {type: 'application/msword'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = currentName || 'document.doc';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  });
+  reset.addEventListener('click', function(){
+    if(timer) clearInterval(timer);
+    file.value = '';
+    chip.classList.remove('on');
+    prog.classList.remove('on');
+    result.classList.remove('on');
+    fill.style.width = '0%'; pct.textContent = '0%';
+    [s1,s2,s3].forEach(function(s){ s.className=''; });
+    convert.disabled = true;
+    setState('empty');
+  });
+})();
+</script>
+</body>
+</html>

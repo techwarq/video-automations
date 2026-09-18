@@ -152,6 +152,252 @@ def discover(url: str, headless: bool = True) -> dict:
     return {"url": url, "count": len(features), "features": features}
 
 
+def scan_content(url: str, headless: bool = True) -> dict:
+    """Understand the page: title + headings/sections + data-clep features.
+
+    This is what the director grounds a natural-language request against,
+    so "show the portfolio's work section" maps to a real anchor instead
+    of a guess. Never requires instrumentation — tours work on any URL.
+    """
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=headless)
+        page = browser.new_page(viewport=VIEWPORT)
+        page.goto(url, wait_until="networkidle")
+        page.wait_for_timeout(900)
+        try:
+            data = page.evaluate("""() => {
+              const title = (document.title || '').slice(0, 120);
+              const desc = ((document.querySelector('meta[name=description]') || {})
+                .content || '').slice(0, 200);
+              const h1 = [...document.querySelectorAll('h1')]
+                .map(e => e.innerText.trim()).filter(Boolean).slice(0, 3);
+              const seen = new Set();
+              const sections = [];
+              const push = (heading, el) => {
+                heading = (heading || '').replace(/\\s+/g, ' ').trim().slice(0, 80);
+                if (!heading || seen.has(heading.toLowerCase())) return;
+                seen.add(heading.toLowerCase());
+                let anchor = null;
+                const host = el.closest ? (el.closest('section[id], div[id], article[id]') || el) : el;
+                if (host && host.id) anchor = '#' + host.id;
+                const r = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+                sections.push({heading, anchor,
+                               y: r ? Math.round(r.top + window.scrollY) : 0});
+              };
+              [...document.querySelectorAll('section, article')]
+                .slice(0, 24).forEach(sec => {
+                  const h = sec.querySelector('h1, h2, h3');
+                  push(h ? h.innerText : (sec.getAttribute('aria-label') || ''), h || sec);
+                });
+              if (!sections.length) {
+                [...document.querySelectorAll('h1, h2')].slice(0, 12)
+                  .forEach(h => push(h.innerText, h));
+              }
+              sections.sort((a, b) => a.y - b.y);
+              const names = [...new Set([...document.querySelectorAll('[data-clep]')]
+                .map(e => e.getAttribute('data-clep')))].slice(0, 20);
+              return {title, desc, h1, sections, names,
+                      height: document.body ? document.body.scrollHeight : 0};
+            }""")
+        except Exception:
+            data = {}
+        browser.close()
+    data = data or {}
+    return {
+        "url": url,
+        "title": data.get("title", ""),
+        "description": data.get("desc", ""),
+        "h1": data.get("h1", []),
+        "sections": data.get("sections", []),
+        "n_sections": len(data.get("sections", [])),
+        "features": [{"name": n} for n in (data.get("names") or [])],
+        "n_features": len(data.get("names") or []),
+        "page_height": data.get("height", 0),
+    }
+
+
+def record_tour(url: str, out_dir: Path, sections: list | None = None,
+                per_section: float = 2.4, max_sections: int = 6,
+                headless: bool = True,
+                chromium_args: list | None = None) -> dict:
+    """Record a controlled scroll walkthrough (portfolio / showcase tour).
+
+    No data-clep needed: opens the page, settles past the loader, then
+    eases through each section (scroll_into_view center + hold) while the
+    cursor rests out of the way. `sections` is an optional list of
+    {heading, anchor} stops (already grounded by director.ground_sections);
+    omitted -> evenly spaced sweep of the full page height.
+
+    Returns a trace.json-compatible dict with kind="clep-tour" plus
+    `captions`: [{t0, t1, text}] for the polish pass.
+    """
+    from playwright.sync_api import sync_playwright
+
+    out_dir = Path(out_dir)
+    (out_dir / "raw").mkdir(parents=True, exist_ok=True)
+    t0 = time.monotonic()
+
+    def now() -> float:
+        return round(time.monotonic() - t0, 3)
+
+    with sync_playwright() as p:
+        browser, ctx = _launch(p, out_dir, record=True, chromium_args=chromium_args)
+        page = ctx.new_page()
+        t0 = time.monotonic()
+        cursor = [{"t": 0.0, "x": 0.88, "y": 0.94}]
+
+        page.goto(url, wait_until="networkidle")
+        try:
+            page.wait_for_load_state("networkidle", timeout=6000)
+        except Exception:
+            pass
+        # Hide native cursor — polish draws its own.
+        try:
+            page.add_style_tag(content="* { cursor: none !important; }")
+        except Exception:
+            pass
+        page.wait_for_timeout(1400)  # past loaders/hero animation
+        try:
+            page.evaluate("() => window.scrollTo(0, 0)")
+        except Exception:
+            pass
+        page.wait_for_timeout(600)
+        establish_end = now()
+
+        try:
+            info = page.evaluate("""() => ({
+              h: (document.body ? document.body.scrollHeight : 900),
+              vh: window.innerHeight || 900,
+              title: (document.title || '')
+            })""")
+        except Exception:
+            info = {}
+        page_h = max(float(info.get("h") or 900), 1.0)
+
+        # Resolve stops to fractional scroll positions (top-center of each).
+        stops: list[dict] = []
+        if sections:
+            for s in sections[:max_sections]:
+                frac = None
+                anchor = (s.get("anchor") or "") if isinstance(s, dict) else ""
+                if anchor:
+                    try:
+                        y = page.evaluate(
+                            """(a) => {
+                              const el = document.querySelector(a);
+                              if (!el) return null;
+                              const r = el.getBoundingClientRect();
+                              return r.top + window.scrollY;
+                            }""", anchor)
+                        if y is not None:
+                            frac = max(min(float(y) / page_h, 0.98), 0.0)
+                    except Exception:
+                        frac = None
+                if frac is None and isinstance(s, dict) and s.get("heading"):
+                    try:
+                        y = page.evaluate(
+                            """(txt) => {
+                              const els = [...document.querySelectorAll('h1,h2,h3,section,article')];
+                              const t = txt.toLowerCase();
+                              const hit = els.find(e => (e.innerText || '').toLowerCase().includes(t.slice(0, 24)));
+                              if (!hit) return null;
+                              const r = hit.getBoundingClientRect();
+                              return r.top + window.scrollY;
+                            }""", str(s["heading"])[:60])
+                        if y is not None:
+                            frac = max(min(float(y) / page_h, 0.98), 0.0)
+                    except Exception:
+                        frac = None
+                heading = (s.get("heading") if isinstance(s, dict) else str(s)) or "Highlights"
+                stops.append({"heading": str(heading)[:70], "frac": frac})
+            # Fill unresolved as even sweep, keep page order for resolved.
+            n = len(stops)
+            for i, s in enumerate(stops):
+                if s["frac"] is None:
+                    s["frac"] = min(0.02 + 0.96 * (i + 1) / (n + 1), 0.98)
+        else:
+            # Even sweep: hero -> mid sections -> footer-adjacent (never the
+            # footer itself — holds on content, not whitespace).
+            n = 4
+            stops = [{"heading": "", "frac": 0.02 + 0.90 * (i + 1) / (n + 1)} for i in range(n)]
+
+        events: list[dict] = [{"t": establish_end, "kind": "establish",
+                                "x": 0.5, "y": 0.5, "label": "top"}]
+        captions: list[dict] = []
+        hold = max(per_section, 1.2)
+        for i, s in enumerate(stops):
+            frac = float(s["frac"])
+            # Ease: jump-cut-free smooth scroll, then a readable hold.
+            t_scroll = now()
+            try:
+                page.evaluate(
+                    """(f) => window.scrollTo({top: f * (document.body.scrollHeight - window.innerHeight),
+                                               behavior: 'smooth'})""", frac)
+            except Exception:
+                pass
+            page.wait_for_timeout(950)  # smooth-scroll glide
+            t_hold0 = now()
+            try:
+                page.wait_for_timeout(int(hold * 1000))
+            except Exception:
+                pass
+            t_hold1 = now()
+            label = s["heading"] or f"Section {i + 1}"
+            events.append({"t": t_hold0, "kind": "section", "step": i,
+                           "x": 0.5, "y": 0.5, "label": label[:60]})
+            if label:
+                captions.append({"t0": t_hold0, "t1": t_hold1, "text": label[:70]})
+
+        # Gentle return toward top for a clean closing frame (no whip-pan:
+        # quick smooth glide, short hold).
+        try:
+            page.evaluate("() => window.scrollTo({top: 0, behavior: 'smooth'})")
+        except Exception:
+            pass
+        page.wait_for_timeout(900)
+        total = now()
+
+        video = page.video
+        vpath = None
+        ctx.close()
+        if video:
+            vpath = Path(str(video.path()))
+        browser.close()
+
+    trace = {
+        "kind": "clep-tour",
+        "name": "tour",
+        "title": (info.get("title") or url or "Tour")[:80],
+        "url": url,
+        "viewport": {"w": VIEWPORT["width"], "h": VIEWPORT["height"]},
+        "video": str(vpath) if vpath else None,
+        "duration": total,
+        "trim_start": max(0.0, round(establish_end - 0.9, 3)),
+        "element": {"x": 0.06, "y": 0.06, "w": 0.88, "h": 0.88},
+        "cursor": cursor,
+        "typing": {"text": "", "t0": 0.0, "t1": 0.0},
+        "click": None,
+        "clicks": [],
+        "focuses": [],
+        "events": events,
+        "captions": captions,
+        "states_seen": [],
+        "steps": [{"action": "tour", "target": s["heading"][:40]} for s in stops],
+        "button_label": "",
+        "query": "",
+        "result_at": total,
+        "has_input": False,
+        "has_button": False,
+    }
+    tpath = out_dir / "trace.json"
+    tpath.write_text(json.dumps(trace, indent=2))
+    print(f"[agent] tour -> {vpath} ({total:.1f}s, {len(stops)} stops, trim {trace['trim_start']}s)")
+    print(f"[agent] trace -> {tpath}")
+    return trace
+
+
 def record(url: str, name: str, out_dir: Path, query: str | None = None,
            headless: bool = True, type_cps: int = 14,
            steps: list | None = None,
@@ -195,9 +441,12 @@ def record(url: str, name: str, out_dir: Path, query: str | None = None,
         t0 = time.monotonic()  # video starts ~here
         cursor.append({"t": 0.0, "x": 0.88, "y": 0.96})
 
-        page.goto(url, wait_until="domcontentloaded")
+        page.goto(url, wait_until="networkidle")
         # Hide the native cursor — polish draws its own eased one.
-        page.add_style_tag(content="* { cursor: none !important; }")
+        try:
+            page.add_style_tag(content="* { cursor: none !important; }")
+        except Exception:
+            pass
         sel = f'[data-clep="{name}"]'
         has_scope = True
         try:

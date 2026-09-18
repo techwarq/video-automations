@@ -77,7 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     src = p.add_mutually_exclusive_group(required=False)
     src.add_argument("--script", type=Path, help="Path to a script .txt file [talking-head/motion].")
-    src.add_argument("--prompt", type=str, help="Raw text used directly as the script — no file needed [talking-head/motion].")
+    src.add_argument("--prompt", type=str, help="Raw text used directly as the script [talking-head/motion] — or the natural-language clip command [clep, e.g. \"/clep walkthrough of https://x showing hero, pricing\"].")
     src.add_argument("--feature", type=Path, help="Path to a feature.json [clep].")
 
     p.add_argument("--out", type=Path, default=None, help="Output video path (default: <engine>/output/final*.mp4).")
@@ -99,7 +99,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--fps", type=int, default=None, help="[clep] output fps (default 60 for agent path).")
     p.add_argument("--quality", type=str, default=None, help="[clep] 720p or 1080p (default 1080p).")
     p.add_argument("--chromium-arg", dest="chromium_args", action="append", default=None,
-                   help="[clep] extra Chromium flag, test-only (repeatable).")
+                    help="[clep] extra Chromium flag, test-only (repeatable).")
+    p.add_argument("--kind", type=str, default=None, choices=["auto", "tour", "feature", "mockup", "launch"],
+                    help="[clep] override the --prompt clip kind (default: inferred).")
+    p.add_argument("--sections", type=str, default=None,
+                    help="[clep] comma-separated tour stops, e.g. \"hero, pricing, contact\".")
+    p.add_argument("--movement", type=str, default=None, choices=["calm", "standard", "dynamic"],
+                    help="[clep] camera movement (default: calm for tours, standard for features).")
+    p.add_argument("--size", type=str, default=None,
+                    help="[clep] exact canvas WxH, e.g. 1120x640 for a landing-page card (overrides --aspect/--quality).")
+    p.add_argument("--bg", type=str, default=None,
+                    help="[clep] backdrop override: preset (saas, minimal, cinematic, apple, blush), custom gradient (#aaa,#bbb[,#ccc]), or solid (#hex).")
 
     # motion only
     p.add_argument("--audio", type=Path, default=None, help="[motion] optional narration audio (mp3/wav); silent if omitted.")
@@ -144,14 +154,17 @@ def main() -> None:
     engine, pkg_dir = _load_engine(args.mode)
 
     if args.mode == "clep":
-        if not args.feature and not args.url:
-            build_parser().error("--feature (synthetic) or --url (agent) is required for --mode clep")
+        if not args.feature and not args.url and not args.prompt:
+            build_parser().error("--prompt (natural language), --feature (synthetic) or --url (agent) is required for --mode clep")
         out_path = args.out or (pkg_dir / "output" / "clep.mp4")
         engine.run(args.feature, out_path, aspect=args.aspect,
                    style=args.style, duration=args.duration,
                    url=args.url, name=args.name, query=args.query,
                    steps_file=args.steps_file, fps=args.fps, quality=args.quality,
-                   chromium_args=args.chromium_args)
+                   chromium_args=args.chromium_args, prompt=args.prompt,
+                   kind=args.kind,
+                   sections=[s.strip() for s in args.sections.split(",")] if args.sections else None,
+                   movement=args.movement, captions=not args.no_captions, size=args.size, bg=args.bg)
         print(f"[allore] output: {out_path}")
         return
 

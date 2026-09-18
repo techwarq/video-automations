@@ -315,10 +315,10 @@ def _draw_cursor(frame: ImageDraw.ImageDraw, x: int, y: int, size: int, click_fx
 # ── Main render ───────────────────────────────────────────────────────────
 
 def render(plan: dict, out_path: Path, fps: int = 30, crf: int = 18,
-           quality: str | None = None) -> Path:
+           quality: str | None = None, size: str | None = None) -> Path:
     import config as _cfg
 
-    W, H = _cfg.canvas(plan["aspect"], quality)
+    W, H = _cfg.canvas(plan["aspect"], quality, size or plan.get("size"))
     dur, n = plan["duration"], plan["n_frames"]
     SS = 2  # supersample base app for crisp text
     BW, BH = W * SS, H * SS

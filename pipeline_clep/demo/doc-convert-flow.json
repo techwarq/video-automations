@@ -1,0 +1,11 @@
+{
+  "_note": "Full upload -> convert -> download demo for the slick DocConvert sample app.",
+  "steps": [
+    { "action": "upload", "target": "file", "file": "pipeline_clep/demo/sample-bank-statement.pdf" },
+    { "action": "wait", "for": "state:ready", "timeout": 6 },
+    { "action": "click", "target": "primary" },
+    { "action": "wait", "for": "state:done", "timeout": 15 },
+    { "action": "click", "target": "text:Download" },
+    { "action": "wait", "for": "time:1.6" }
+  ]
+}

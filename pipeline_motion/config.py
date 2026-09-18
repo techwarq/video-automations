@@ -283,6 +283,19 @@ MGFX_STYLES = {
         "pill_bg": CLEP_LIME_RGB,
         "pill_fg": (12, 12, 12),
     },
+    "clep_launch": {  # Clep launch video (Sep 2026 brief): soft off-white editorial
+        "bg": (243, 243, 241),      # #F3F3F1
+        "fg": (17, 23, 20),         # #111714
+        "accent": (184, 255, 25),   # #B8FF19 lime
+        "accent2": (77, 138, 24),   # #4D8A18 green
+        "muted": (93, 102, 98),     # #5D6662 gray
+        "card_bg": (255, 255, 255),
+        "card_border": (217, 220, 216),  # #D9DCD8
+        "pill_bg": (184, 255, 25),
+        "pill_fg": (17, 23, 20),
+        "lime": (184, 255, 25),
+        "green": (77, 138, 24),
+    },
     "light": {  # default: black text on white (hero headlines)
         "bg": (255, 255, 255),
         "fg": (16, 16, 16),
